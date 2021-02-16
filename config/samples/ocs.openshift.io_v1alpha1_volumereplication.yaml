@@ -1,0 +1,7 @@
+apiVersion: ocs.openshift.io.volumereplication.ocs.openshift.io/v1alpha1
+kind: VolumeReplication
+metadata:
+  name: volumereplication-sample
+spec:
+  # Add fields here
+  foo: bar
