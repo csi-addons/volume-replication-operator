@@ -23,13 +23,15 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+type ProvisionerName string
+
 // VolumeReplicationSpec defines the desired state of VolumeReplication
 type VolumeReplicationSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of VolumeReplication. Edit VolumeReplication_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// Provisioner is the name of the driver to be used for replication of the volume
+	Provisioner ProvisionerName
 }
 
 // VolumeReplicationStatus defines the observed state of VolumeReplication
