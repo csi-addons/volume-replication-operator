@@ -1,7 +1,0 @@
-apiVersion: replication.storage.openshift.io/v1alpha1
-kind: VolumeReplica
-metadata:
-  name: volumereplica-sample
-spec:
-  # Add fields here
-  foo: bar
