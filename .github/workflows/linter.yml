@@ -1,0 +1,17 @@
+name: Lint Code Base
+
+on:
+  pull_request:
+    branches: ['*']
+
+jobs:
+  test-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout source
+        uses: actions/checkout@v2
+
+      - name: Lint Code Base
+        uses: github/super-linter@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
