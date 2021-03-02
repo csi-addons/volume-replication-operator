@@ -23,13 +23,16 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// VolumeReplicationClassSpec defines the desired state of VolumeReplicationClass
+// VolumeReplicationClassSpec specifies parameters that a underlying storage system uses when creating a volume replica. A specific VolumeReplicationClass is used by specifying its name in a VolumeReplicationRequest object.
 type VolumeReplicationClassSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// driver is the name of the storage driver that handles this VolumeReplicationClass.
+	// Required
+	Driver string `json:"driver" protobuf:"bytes,2,opt,name=driver"`
 
-	// Foo is an example field of VolumeReplicationClass. Edit VolumeReplicationClass_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// parameters is a key-value map with storage driver specific parameters for creating the volume replicas.
+	// These values are opaque to Kubernetes.
+	// +optional
+	Parameters map[string]string `json:"parameters,omitempty" protobuf:"bytes,3,rep,name=parameters"`
 }
 
 // VolumeReplicationClassStatus defines the observed state of VolumeReplicationClass
@@ -41,7 +44,14 @@ type VolumeReplicationClassStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// VolumeReplicationClass is the Schema for the volumereplicationclasses API
+// VolumeReplicationClass specifies parameters that a underlying storage system
+// uses when creating a volume replica. A specific VolumeReplicationClass is
+// used by specifying its name in a VolumeReplicationRequest object.
+// VolumeReplicationClasses are non-namespaced
+// +kubebuilder:object:root=true
+// +kubebuilder:resource:scope=Cluster
+// +kubebuilder:printcolume:name="Driver",type=string,JSONPath=`.driver`
+// +kubebuilder:printcolume:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 type VolumeReplicationClass struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

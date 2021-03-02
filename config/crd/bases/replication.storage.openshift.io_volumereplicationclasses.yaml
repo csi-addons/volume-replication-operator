@@ -14,13 +14,15 @@ spec:
     listKind: VolumeReplicationClassList
     plural: volumereplicationclasses
     singular: volumereplicationclass
-  scope: Namespaced
+  scope: Cluster
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: VolumeReplicationClass is the Schema for the volumereplicationclasses
-          API
+        description: VolumeReplicationClass specifies parameters that a underlying
+          storage system uses when creating a volume replica. A specific VolumeReplicationClass
+          is used by specifying its name in a VolumeReplicationRequest object. VolumeReplicationClasses
+          are non-namespaced
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -35,12 +37,23 @@ spec:
           metadata:
             type: object
           spec:
-            description: VolumeReplicationClassSpec defines the desired state of VolumeReplicationClass
+            description: VolumeReplicationClassSpec specifies parameters that a underlying
+              storage system uses when creating a volume replica. A specific VolumeReplicationClass
+              is used by specifying its name in a VolumeReplicationRequest object.
             properties:
-              foo:
-                description: Foo is an example field of VolumeReplicationClass. Edit
-                  VolumeReplicationClass_types.go to remove/update
+              driver:
+                description: driver is the name of the storage driver that handles
+                  this VolumeReplicationClass. Required
                 type: string
+              parameters:
+                additionalProperties:
+                  type: string
+                description: parameters is a key-value map with storage driver specific
+                  parameters for creating the volume replicas. These values are opaque
+                  to Kubernetes.
+                type: object
+            required:
+            - driver
             type: object
           status:
             description: VolumeReplicationClassStatus defines the observed state of
