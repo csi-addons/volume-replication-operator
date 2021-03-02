@@ -1,0 +1,20 @@
+# permissions for end users to view volumereplicas.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: volumereplica-viewer-role
+rules:
+- apiGroups:
+  - replication.storage.openshift.io
+  resources:
+  - volumereplicas
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - replication.storage.openshift.io
+  resources:
+  - volumereplicas/status
+  verbs:
+  - get
