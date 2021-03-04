@@ -17,23 +17,57 @@ limitations under the License.
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+// ImageState represents the replication operations to be performed on the image
+type ImageState string
+
+const (
+	// Primary ImageState enables mirroring and promotes the image to primary
+	Primary ImageState = "primary"
+
+	// Secondary ImageState demotes the image to secondary and resyncs the image if out of sync
+	Secondary ImageState = "secondary"
+
+	// Resync option resyncs the image
+	Resync ImageState = "resync"
+)
+
+// ReplicationState captures the latest state of the replication operation
+type ReplicationState string
+
+const (
+	// Replicating means the image is mirroring or replicating
+	Replicating ReplicationState = "Replicating"
+
+	// ReplicationFailure means the last replication operation failed
+	ReplicationFailure ReplicationState = "Failed"
+)
 
 // VolumeReplicationSpec defines the desired state of VolumeReplication
 type VolumeReplicationSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// VolumeReplicationClass is the VolumeReplicationClass name for this VolumeReplication resource
+	// +kubebuilder:validation:Required
+	VolumeReplicationClass string `json:"volumeReplicationClass"`
 
+	// ImageState represents the replication operation to be performed on the image.
+	// Supported operations are "primary", "secondary" and "resync"
+	// +kubebuilder:validation:Required
+	ImageState ImageState `json:"imageState"`
+
+	// DataSource represents the object associated with the image
+	// +kubebuilder:validation:Required
+	DataSource corev1.TypedLocalObjectReference `json:"dataSource"`
 }
 
 // VolumeReplicationStatus defines the observed state of VolumeReplication
 type VolumeReplicationStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	State              ReplicationState `json:"state,omitempty"`
+	Message            string           `json:"message,omitempty"`
+	LastStartTime      metav1.Time      `json:"lastStartTime,omitempty"`
+	LastCompletionTime metav1.Time      `json:"lastCompletionTime,omitempty"`
 }
 
 // +kubebuilder:object:root=true
