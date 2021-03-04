@@ -20,20 +20,21 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
-// VolumeReplicationClassSpec defines the desired state of VolumeReplicationClass
+// VolumeReplicationClassSpec specifies parameters that an underlying storage system uses
+// when creating a volume replica. A specific VolumeReplicationClass is used by specifying
+// its name in a VolumeReplication object.
 type VolumeReplicationClassSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
+	// Provisioner is the name of storage provisioner
+	// +kubebuilder:validation:Required
+	Provisioner string `json:"provisioner"`
+	// Parameters is a key-value map with storage provisioner specific configurations for
+	// creating volume replicas
+	// +kubebuilder:validation:Optional
+	Parameters map[string]string `json:"parameters,omitempty"`
 }
 
 // VolumeReplicationClassStatus defines the observed state of VolumeReplicationClass
 type VolumeReplicationClassStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
 }
 
 // +kubebuilder:object:root=true

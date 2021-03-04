@@ -35,7 +35,21 @@ spec:
           metadata:
             type: object
           spec:
-            description: VolumeReplicationClassSpec defines the desired state of VolumeReplicationClass
+            description: VolumeReplicationClassSpec specifies parameters that an underlying
+              storage system uses when creating a volume replica. A specific VolumeReplicationClass
+              is used by specifying its name in a VolumeReplication object.
+            properties:
+              parameters:
+                additionalProperties:
+                  type: string
+                description: Parameters is a key-value map with storage provisioner
+                  specific configurations for creating volume replicas
+                type: object
+              provisioner:
+                description: Provisioner is the name of storage provisioner
+                type: string
+            required:
+            - provisioner
             type: object
           status:
             description: VolumeReplicationClassStatus defines the observed state of
