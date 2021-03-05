@@ -1,0 +1,39 @@
+name: make test
+
+on:
+  pull_request:
+    branches: [ '*' ]
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        go: ["1.15"]
+    steps:
+    - uses: actions/setup-go@v2
+      with:
+        go-version: ${{ matrix.go }}
+
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: copy volume-replication-operator repo in go src
+      run: |
+        mkdir -p /home/runner/go/src/github.com/kube-storage
+        cp -r /home/runner/work/volume-replication-operator/volume-replication-operator /home/runner/go/src/github.com/kube-storage
+
+    - name: run tests
+      working-directory: "/home/runner/go/src/github.com/kube-storage/volume-replication-operator"
+      env:
+        GOPATH: /home/runner/go
+      run: |
+        export PATH=$PATH:$GOPATH/bin
+        export VERSION="2.3.2"
+        wget https://github.com/kubernetes-sigs/kubebuilder/releases/download/v"$VERSION"/kubebuilder_"$VERSION"_linux_amd64.tar.gz
+        tar -zxvf kubebuilder_"$VERSION"_linux_amd64.tar.gz
+        export KUBEBUILDER_ASSETS="$(pwd)/kubebuilder_"$VERSION"_linux_amd64/bin"
+        make test
