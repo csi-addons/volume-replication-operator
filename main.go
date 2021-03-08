@@ -18,6 +18,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"time"
 
@@ -57,12 +58,14 @@ func init() {
 
 func main() {
 	var metricsAddr string
+	var leaderElectionNamespace string
 	var enableLeaderElection bool
 	var probeAddr string
 
 	cfg := config.NewDriverConfig()
 
 	flag.StringVar(&metricsAddr, "metrics-bind-address", "0", "The address the metric endpoint binds to.")
+	flag.StringVar(&leaderElectionNamespace, "leader-election-namespace", "", "Namespace where the leader election resource lives")
 	flag.StringVar(&cfg.DriverName, "driver-name", "", "The CSI driver name.")
 	flag.StringVar(&cfg.DriverEndpoint, "csi-address", "/run/csi/socket", "Address of the CSI driver socket.")
 	flag.DurationVar(&cfg.RPCTimeout, "rpc-timeout", defaultTimeout, "The timeout for RPCs to the CSI driver.")
@@ -84,13 +87,22 @@ func main() {
 		os.Exit(1)
 	}
 
+	if leaderElectionNamespace == "" {
+		fmt.Fprintln(os.Stderr, "leader-election-namespace is empty")
+		os.Exit(1)
+	}
+	// unique electionID per operator
+	electionID := cfg.DriverName + "-" + leaderElectionNamespace
+
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:                 scheme,
-		MetricsBindAddress:     metricsAddr,
-		Port:                   9443,
-		HealthProbeBindAddress: probeAddr,
-		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "4bf2b360.storage.openshift.io",
+		Scheme:                     scheme,
+		MetricsBindAddress:         metricsAddr,
+		Port:                       9443,
+		HealthProbeBindAddress:     probeAddr,
+		LeaderElectionResourceLock: "leases",
+		LeaderElection:             enableLeaderElection,
+		LeaderElectionNamespace:    leaderElectionNamespace,
+		LeaderElectionID:           electionID,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
