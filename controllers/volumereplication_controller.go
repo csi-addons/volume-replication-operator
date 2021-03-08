@@ -25,13 +25,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	replicationv1alpha1 "github.com/kube-storage/volume-replication-operator/api/v1alpha1"
+	"github.com/kube-storage/volume-replication-operator/pkg/config"
 )
 
 // VolumeReplicationReconciler reconciles a VolumeReplication object
 type VolumeReplicationReconciler struct {
 	client.Client
-	Log    logr.Logger
-	Scheme *runtime.Scheme
+	Log          logr.Logger
+	Scheme       *runtime.Scheme
+	DriverConfig *config.DriverConfig
 }
 
 // +kubebuilder:rbac:groups=replication.storage.openshift.io,resources=volumereplications,verbs=get;list;watch;create;update;patch;delete
@@ -56,7 +58,8 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *VolumeReplicationReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *VolumeReplicationReconciler) SetupWithManager(mgr ctrl.Manager, cfg *config.DriverConfig) error {
+	r.DriverConfig = cfg
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&replicationv1alpha1.VolumeReplication{}).
 		Complete(r)
