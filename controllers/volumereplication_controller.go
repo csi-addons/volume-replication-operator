@@ -29,6 +29,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	replicationv1alpha1 "github.com/kube-storage/volume-replication-operator/api/v1alpha1"
+	"github.com/kube-storage/volume-replication-operator/controllers/tasks"
+	"github.com/kube-storage/volume-replication-operator/controllers/tasks/replication"
 	"github.com/kube-storage/volume-replication-operator/pkg/config"
 )
 
@@ -98,6 +100,13 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 	r.Log.Info("volume handle", volumeHandle)
 
+	if instance.Spec.ImageState == replicationv1alpha1.Secondary {
+		failedTask, err := markVolumeAsSecondary()
+		if err != nil {
+			r.Log.Error(err, "task failed", "taskName", failedTask)
+		}
+	}
+
 	return ctrl.Result{}, nil
 }
 
@@ -107,4 +116,20 @@ func (r *VolumeReplicationReconciler) SetupWithManager(mgr ctrl.Manager, cfg *co
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&replicationv1alpha1.VolumeReplication{}).
 		Complete(r)
+}
+
+// markVolumeAsSecondary defines and runs a set of tasks required to mark a volume as secondary
+func markVolumeAsSecondary() (string, error) {
+	var markVolumeAsSecondaryTasks = []*tasks.TaskSpec{
+		{
+			Name: "Demoting volume",
+			Task: replication.NewDemoteVolumeTask(),
+		},
+		{
+			Name: "Re-syncing volume",
+			Task: replication.NewResyncVolumeTask(),
+		},
+	}
+
+	return tasks.RunAll(markVolumeAsSecondaryTasks)
 }
