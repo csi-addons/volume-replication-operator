@@ -72,6 +72,20 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return reconcile.Result{}, err
 	}
 
+	// Get VolumeReplicationClass
+	vrcObj := &replicationv1alpha1.VolumeReplicationClass{}
+	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: instance.Spec.VolumeReplicationClass}, vrcObj)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			r.Log.Error(err, "VolumeReplicationClass not found", "VolumeReplicationClass", instance.Spec.VolumeReplicationClass)
+		}
+		return ctrl.Result{}, err
+	}
+
+	if r.DriverConfig.DriverName != vrcObj.Spec.Provisioner {
+		return ctrl.Result{}, nil
+	}
+
 	var volumeHandle string
 	nameSpacedName := types.NamespacedName{Name: instance.Spec.DataSource.Name, Namespace: req.Namespace}
 	switch instance.Spec.DataSource.Kind {
