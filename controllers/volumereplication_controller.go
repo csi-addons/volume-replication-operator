@@ -18,14 +18,22 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-logr/logr"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	replicationv1alpha1 "github.com/kube-storage/volume-replication-operator/api/v1alpha1"
 	"github.com/kube-storage/volume-replication-operator/pkg/config"
+)
+
+const (
+	pvcDataSource = "PersistentVolumeClaim"
 )
 
 // VolumeReplicationReconciler reconciles a VolumeReplication object
@@ -42,17 +50,43 @@ type VolumeReplicationReconciler struct {
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the VolumeReplication object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.7.0/pkg/reconcile
 func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = r.Log.WithValues("volumereplication", req.NamespacedName)
 
-	// your logic here
+	_ = r.Log.WithValues("controller_volumereplication", req.NamespacedName)
+
+	// Fetch VolumeReplication instance
+	instance := &replicationv1alpha1.VolumeReplication{}
+	err := r.Client.Get(context.TODO(), req.NamespacedName, instance)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			// Request object not found, could have been deleted after reconcile request.
+			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
+			// Return and don't requeue
+			r.Log.Info("no VolumeReplication resource found")
+			return reconcile.Result{}, nil
+		}
+		// Error reading the object - requeue the request.
+		return reconcile.Result{}, err
+	}
+
+	var volumeHandle string
+	nameSpacedName := types.NamespacedName{Name: instance.Spec.DataSource.Name, Namespace: req.Namespace}
+	switch instance.Spec.DataSource.Kind {
+	case pvcDataSource:
+		_, pv, err := r.getPVCDataSource(nameSpacedName)
+		if err != nil {
+			r.Log.Error(err, "failed to get dataSource for PVC", "dataSourceName", nameSpacedName.Name)
+			return ctrl.Result{}, err
+		}
+		volumeHandle = pv.Spec.CSI.VolumeHandle
+	default:
+		return ctrl.Result{}, fmt.Errorf("unsupported datasource kind %q", instance.Spec.DataSource.Kind)
+	}
+
+	r.Log.Info("volume handle", volumeHandle)
 
 	return ctrl.Result{}, nil
 }
