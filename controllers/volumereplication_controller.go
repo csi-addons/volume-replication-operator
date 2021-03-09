@@ -73,12 +73,8 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	}
 
 	// Get VolumeReplicationClass
-	vrcObj := &replicationv1alpha1.VolumeReplicationClass{}
-	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: instance.Spec.VolumeReplicationClass}, vrcObj)
+	vrcObj, err := r.getVolumeReplicaCLass(instance.Spec.VolumeReplicationClass)
 	if err != nil {
-		if errors.IsNotFound(err) {
-			r.Log.Error(err, "VolumeReplicationClass not found", "VolumeReplicationClass", instance.Spec.VolumeReplicationClass)
-		}
 		return ctrl.Result{}, err
 	}
 

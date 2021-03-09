@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	replicationv1alpha1 "github.com/kube-storage/volume-replication-operator/api/v1alpha1"
+	"github.com/kube-storage/volume-replication-operator/pkg/config"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -43,6 +44,7 @@ var mockVolumeReplicationObj = &replicationv1alpha1.VolumeReplication{
 		Namespace: mockNamespace,
 	},
 	Spec: replicationv1alpha1.VolumeReplicationSpec{
+		VolumeReplicationClass: "volume-replication-class",
 		DataSource: corev1.TypedLocalObjectReference{
 			Name: mockPVCName,
 		},
@@ -96,11 +98,13 @@ func createFakeVolumeReplicationReconciler(t *testing.T, obj ...runtime.Object) 
 	client := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(obj...).Build()
 
 	return VolumeReplicationReconciler{
-		Client: client,
-		Scheme: scheme,
-		Log:    logf.Log.WithName("controller_volumereplication_test"),
+		Client:       client,
+		Scheme:       scheme,
+		Log:          logf.Log.WithName("controller_volumereplication_test"),
+		DriverConfig: &config.DriverConfig{DriverName: "test-driver"},
 	}
 }
+
 func TestGetVolumeHandle(t *testing.T) {
 	testcases := []struct {
 		name                 string
