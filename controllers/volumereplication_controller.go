@@ -46,6 +46,7 @@ type VolumeReplicationReconciler struct {
 	Scheme       *runtime.Scheme
 	DriverConfig *config.DriverConfig
 	GRPCClient   *grpcClient.Client
+	Replication  grpcClient.VolumeReplication
 }
 
 // +kubebuilder:rbac:groups=replication.storage.openshift.io,resources=volumereplications,verbs=get;list;watch;create;update;patch;delete
@@ -122,7 +123,7 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	r.Log.Info("volume handle", volumeHandle)
 
 	if instance.Spec.ImageState == replicationv1alpha1.Secondary {
-		failedTask, err := markVolumeAsSecondary()
+		failedTask, err := r.markVolumeAsSecondary(volumeHandle, parameters, secret)
 		if err != nil {
 			r.Log.Error(err, "task failed", "taskName", failedTask)
 		}
@@ -145,17 +146,24 @@ func (r *VolumeReplicationReconciler) SetupWithManager(mgr ctrl.Manager, cfg *co
 		return err
 	}
 	r.GRPCClient = c
+	r.Replication = grpcClient.NewReplicationClient(r.GRPCClient.Client, cfg.RPCTimeout)
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&replicationv1alpha1.VolumeReplication{}).
 		Complete(r)
 }
 
 // markVolumeAsSecondary defines and runs a set of tasks required to mark a volume as secondary
-func markVolumeAsSecondary() (string, error) {
+func (r *VolumeReplicationReconciler) markVolumeAsSecondary(volumeID string, parameters, secrets map[string]string) (string, error) {
+	c := replication.CommonRequestParameters{
+		VolumeID:    volumeID,
+		Parameters:  parameters,
+		Secrets:     secrets,
+		Replication: r.Replication,
+	}
 	var markVolumeAsSecondaryTasks = []*tasks.TaskSpec{
 		{
 			Name: "Demoting volume",
-			Task: replication.NewDemoteVolumeTask(),
+			Task: replication.NewDemoteVolumeTask(c),
 		},
 		{
 			Name: "Re-syncing volume",
