@@ -28,8 +28,8 @@ import (
 
 // Client holds the GRPC connenction details
 type Client struct {
-	client  *grpc.ClientConn
-	timeout time.Duration
+	Client  *grpc.ClientConn
+	Timeout time.Duration
 }
 
 // Connect to the GRPC client
@@ -44,19 +44,19 @@ func New(address string, timeout time.Duration) (*Client, error) {
 	if err != nil {
 		return c, err
 	}
-	c.client = cc
-	c.timeout = timeout
+	c.Client = cc
+	c.Timeout = timeout
 	return c, nil
 }
 
 // Probe the GRPC client once
 func (c *Client) Probe() error {
-	return rpc.ProbeForever(c.client, c.timeout)
+	return rpc.ProbeForever(c.Client, c.Timeout)
 }
 
 // GetDriverName gets the driver name from the driver
 func (c *Client) GetDriverName() (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), c.Timeout)
 	defer cancel()
-	return rpc.GetDriverName(ctx, c.client)
+	return rpc.GetDriverName(ctx, c.Client)
 }
