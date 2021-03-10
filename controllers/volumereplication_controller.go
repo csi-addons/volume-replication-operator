@@ -31,6 +31,7 @@ import (
 	replicationv1alpha1 "github.com/kube-storage/volume-replication-operator/api/v1alpha1"
 	"github.com/kube-storage/volume-replication-operator/controllers/tasks"
 	"github.com/kube-storage/volume-replication-operator/controllers/tasks/replication"
+	grpcClient "github.com/kube-storage/volume-replication-operator/pkg/client"
 	"github.com/kube-storage/volume-replication-operator/pkg/config"
 )
 
@@ -44,6 +45,7 @@ type VolumeReplicationReconciler struct {
 	Log          logr.Logger
 	Scheme       *runtime.Scheme
 	DriverConfig *config.DriverConfig
+	GRPCClient   *grpcClient.Client
 }
 
 // +kubebuilder:rbac:groups=replication.storage.openshift.io,resources=volumereplications,verbs=get;list;watch;create;update;patch;delete
@@ -113,6 +115,17 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 // SetupWithManager sets up the controller with the Manager.
 func (r *VolumeReplicationReconciler) SetupWithManager(mgr ctrl.Manager, cfg *config.DriverConfig) error {
 	r.DriverConfig = cfg
+	c, err := grpcClient.New(cfg.DriverEndpoint, cfg.RPCTimeout)
+	if err != nil {
+		r.Log.Error(err, "failed to create GRPC Client", "Endpoint", cfg.DriverEndpoint, "GRPC Timeout", cfg.RPCTimeout)
+		return err
+	}
+	err = c.Probe()
+	if err != nil {
+		r.Log.Error(err, "failed to connect to driver", "Endpoint", cfg.DriverEndpoint, "GRPC Timeout", cfg.RPCTimeout)
+		return err
+	}
+	r.GRPCClient = c
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&replicationv1alpha1.VolumeReplication{}).
 		Complete(r)
