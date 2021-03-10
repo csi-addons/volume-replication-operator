@@ -16,23 +16,14 @@ limitations under the License.
 
 package replication
 
-// DemoteVolumeTask stores configuration required to demote volume
-type DemoteVolumeTask struct {
-	// params required for this task
-	CommonRequestParameters
-}
+import (
+	"github.com/kube-storage/volume-replication-operator/pkg/client"
+)
 
-// NewDemoteVolumeTask returns a DemoteVolumeTask object
-func NewDemoteVolumeTask(c CommonRequestParameters) *DemoteVolumeTask {
-	return &DemoteVolumeTask{c}
-}
-
-// Run is used to run DemoteVolume task
-func (d *DemoteVolumeTask) Run() error {
-	_, err := d.Replication.DemoteVolume(
-		d.CommonRequestParameters.VolumeID,
-		d.CommonRequestParameters.Parameters,
-		d.CommonRequestParameters.Secrets,
-	)
-	return err
+// CommonRequestParameters holds the common parameters across replication operations.
+type CommonRequestParameters struct {
+	VolumeID    string
+	Parameters  map[string]string
+	Secrets     map[string]string
+	Replication client.VolumeReplication
 }
