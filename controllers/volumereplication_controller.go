@@ -86,6 +86,9 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return ctrl.Result{}, nil
 	}
 
+	// remove the prefix keys in volume replication class parameters
+	parameters := filterPrefixedParameters(replicationParameterPrefix, vrcObj.Spec.Parameters)
+
 	var volumeHandle string
 	nameSpacedName := types.NamespacedName{Name: instance.Spec.DataSource.Name, Namespace: req.Namespace}
 	switch instance.Spec.DataSource.Kind {
