@@ -36,7 +36,13 @@ import (
 )
 
 const (
-	pvcDataSource = "PersistentVolumeClaim"
+	pvcDataSource           = "PersistentVolumeClaim"
+	enableVolumeReplication = "Enable volume replication"
+	// TODO remove comment signature when use disableVolumeReplication
+	// disableVolumeReplication = "Disable volume replication"
+	promoteVolume = "Promote volume"
+	demoteVolume  = "Demote volume"
+	resyncVolume  = "Resync volume"
 )
 
 // VolumeReplicationReconciler reconciles a VolumeReplication object
@@ -122,11 +128,23 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 	r.Log.Info("volume handle", volumeHandle)
 
-	if instance.Spec.ImageState == replicationv1alpha1.Secondary {
+	switch instance.Spec.ImageState {
+	case replicationv1alpha1.Primary:
+		failedTask, err := r.markVolumeAsPrimary(volumeHandle, parameters, secret)
+		if err != nil {
+			r.Log.Error(err, "task failed", "taskName", failedTask)
+			return ctrl.Result{}, err
+		}
+
+	case replicationv1alpha1.Secondary:
 		failedTask, err := r.markVolumeAsSecondary(volumeHandle, parameters, secret)
 		if err != nil {
 			r.Log.Error(err, "task failed", "taskName", failedTask)
+			return ctrl.Result{}, err
 		}
+
+	default:
+		return ctrl.Result{}, fmt.Errorf("unsupported image state %q", instance.Spec.ImageState)
 	}
 
 	return ctrl.Result{}, nil
@@ -152,6 +170,28 @@ func (r *VolumeReplicationReconciler) SetupWithManager(mgr ctrl.Manager, cfg *co
 		Complete(r)
 }
 
+// markVolumeAsPrimary defines and runs a set of tasks required to mark a volume as primary
+func (r *VolumeReplicationReconciler) markVolumeAsPrimary(volumeID string, parameters, secrets map[string]string) (string, error) {
+	c := replication.CommonRequestParameters{
+		VolumeID:    volumeID,
+		Parameters:  parameters,
+		Secrets:     secrets,
+		Replication: r.Replication,
+	}
+	var markVolumeAsPrimaryTasks = []*tasks.TaskSpec{
+		{
+			Name: enableVolumeReplication,
+			Task: replication.NewEnableTask(c),
+		},
+		{
+			Name: promoteVolume,
+			Task: replication.NewPromoteVolumeTask(c),
+		},
+	}
+
+	return tasks.RunAll(markVolumeAsPrimaryTasks)
+}
+
 // markVolumeAsSecondary defines and runs a set of tasks required to mark a volume as secondary
 func (r *VolumeReplicationReconciler) markVolumeAsSecondary(volumeID string, parameters, secrets map[string]string) (string, error) {
 	c := replication.CommonRequestParameters{
@@ -162,11 +202,11 @@ func (r *VolumeReplicationReconciler) markVolumeAsSecondary(volumeID string, par
 	}
 	var markVolumeAsSecondaryTasks = []*tasks.TaskSpec{
 		{
-			Name: "Demoting volume",
+			Name: demoteVolume,
 			Task: replication.NewDemoteVolumeTask(c),
 		},
 		{
-			Name: "Re-syncing volume",
+			Name: resyncVolume,
 			Task: replication.NewResyncVolumeTask(),
 		},
 	}
