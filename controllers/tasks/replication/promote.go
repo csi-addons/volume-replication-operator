@@ -19,15 +19,21 @@ package replication
 // PromoteVolumeTask stores configuration required to promote volume
 type PromoteVolumeTask struct {
 	// params required for this task
+	CommonRequestParameters
 }
 
 // NewPromoteVolumeTask returns a PromoteVolumeTask object
-func NewPromoteVolumeTask() *PromoteVolumeTask {
-	return &PromoteVolumeTask{}
+func NewPromoteVolumeTask(c CommonRequestParameters) *PromoteVolumeTask {
+	return &PromoteVolumeTask{c}
 }
 
 // Run is used to run PromoteVolume task
 func (p *PromoteVolumeTask) Run() error {
 	// perform sub-tasks
-	return nil
+	_, err := p.Replication.PromoteVolume(
+		p.CommonRequestParameters.VolumeID,
+		p.CommonRequestParameters.Secrets,
+		p.CommonRequestParameters.Parameters,
+	)
+	return err
 }
