@@ -31,8 +31,8 @@ func NewDemoteVolumeTask(c CommonRequestParameters) *DemoteVolumeTask {
 func (d *DemoteVolumeTask) Run() error {
 	_, err := d.Replication.DemoteVolume(
 		d.CommonRequestParameters.VolumeID,
-		d.CommonRequestParameters.Parameters,
 		d.CommonRequestParameters.Secrets,
+		d.CommonRequestParameters.Parameters,
 	)
 	return err
 }
