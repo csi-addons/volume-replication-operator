@@ -1,0 +1,26 @@
+name: Go
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  login:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Login to GitHub Packages Docker Registry
+        uses: docker/login-action@v1
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
+      - name: read env
+        env:
+          USER_NAME: ${{ secrets.QUAY_USERNAME }}
+        run: |
+          echo "${{ secrets.QUAY_USERNAME }}"
+          echo ${{ secrets.QUAY_USERNAME }}
+          echo  "${{ env.USER_NAME }}"
+          echo ${{ secrets.QUAY_PASSWORD }} | docker login quay.io --username ${{ secrets.QUAY_PASSWORD }} --password-stdin
