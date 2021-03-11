@@ -19,15 +19,20 @@ package replication
 // DisableTask stores configuration required to disable volume replication
 type DisableTask struct {
 	// params required for this task
+	CommonRequestParameters
 }
 
 // NewDisableTask returns a DisableTask object
-func NewDisableTask() *DisableTask {
-	return &DisableTask{}
+func NewDisableTask(c CommonRequestParameters) *DisableTask {
+	return &DisableTask{c}
 }
 
 // Run is used to run Disable task
 func (d *DisableTask) Run() error {
-	// perform sub-tasks
-	return nil
+	_, err := d.Replication.DisableVolumeReplication(
+		d.CommonRequestParameters.VolumeID,
+		d.CommonRequestParameters.Secrets,
+		d.CommonRequestParameters.Parameters,
+	)
+	return err
 }
