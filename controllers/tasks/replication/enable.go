@@ -19,15 +19,22 @@ package replication
 // EnableTask stores configuration required to enable volume replication
 type EnableTask struct {
 	// params required for this task
+	CommonRequestParameters
 }
 
 // NewEnableTask returns a EnableTask object
-func NewEnableTask() *EnableTask {
-	return &EnableTask{}
+func NewEnableTask(c CommonRequestParameters) *EnableTask {
+	return &EnableTask{c}
 }
 
 // Run is used to run Enable task
 func (e *EnableTask) Run() error {
 	// perform sub-tasks
-	return nil
+	_, err := e.Replication.EnableVolumeReplication(
+		e.CommonRequestParameters.VolumeID,
+		e.CommonRequestParameters.Secrets,
+		e.CommonRequestParameters.Parameters,
+	)
+
+	return err
 }
