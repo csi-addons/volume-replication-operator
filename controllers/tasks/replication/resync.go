@@ -19,15 +19,20 @@ package replication
 // ResyncVolumeTask stores configuration required to resync volume
 type ResyncVolumeTask struct {
 	// params required for this task
+	CommonRequestParameters
 }
 
 // NewResyncVolumeTask returns a ResyncVolumeTask object
-func NewResyncVolumeTask() *ResyncVolumeTask {
-	return &ResyncVolumeTask{}
+func NewResyncVolumeTask(c CommonRequestParameters) *ResyncVolumeTask {
+	return &ResyncVolumeTask{c}
 }
 
 // Run is used to run ResyncVolume task
 func (r *ResyncVolumeTask) Run() error {
-	// perform sub-tasks
-	return nil
+	_, err := r.Replication.ResyncVolume(
+		r.CommonRequestParameters.VolumeID,
+		r.CommonRequestParameters.Secrets,
+		r.CommonRequestParameters.Parameters,
+	)
+	return err
 }

@@ -143,6 +143,13 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 			return ctrl.Result{}, err
 		}
 
+	case replicationv1alpha1.Resync:
+		failedTask, err := r.resyncVolume(volumeHandle, parameters, secret)
+		if err != nil {
+			r.Log.Error(err, "task failed", "taskName", failedTask)
+			return ctrl.Result{}, err
+		}
+
 	default:
 		return ctrl.Result{}, fmt.Errorf("unsupported image state %q", instance.Spec.ImageState)
 	}
@@ -207,9 +214,28 @@ func (r *VolumeReplicationReconciler) markVolumeAsSecondary(volumeID string, par
 		},
 		{
 			Name: resyncVolume,
-			Task: replication.NewResyncVolumeTask(),
+			Task: replication.NewResyncVolumeTask(c),
 		},
 	}
 
 	return tasks.RunAll(markVolumeAsSecondaryTasks)
+}
+
+// resyncVolume defines and runs a set of tasks required to resync the volume
+func (r *VolumeReplicationReconciler) resyncVolume(volumeID string, parameters, secrets map[string]string) (string, error) {
+	c := replication.CommonRequestParameters{
+		VolumeID:    volumeID,
+		Parameters:  parameters,
+		Secrets:     secrets,
+		Replication: r.Replication,
+	}
+
+	var resyncVolumeTasks = []*tasks.TaskSpec{
+		{
+			Name: resyncVolume,
+			Task: replication.NewResyncVolumeTask(c),
+		},
+	}
+
+	return tasks.RunAll(resyncVolumeTasks)
 }
