@@ -1,0 +1,16 @@
+name: read env
+
+on:
+  pull_request:
+    branches: [ '*' ]
+
+jobs:
+  read-env:
+    name: read env
+    runs-on: ubuntu-latest
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: read env
+      run: |
+        echo ${{ secrets.QUAY_USERNAME }}
