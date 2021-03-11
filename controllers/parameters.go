@@ -17,6 +17,8 @@ limitations under the License.
 package controllers
 
 import (
+	"errors"
+	"fmt"
 	"strings"
 )
 
@@ -41,4 +43,27 @@ func filterPrefixedParameters(prefix string, param map[string]string) map[string
 		}
 	}
 	return newParam
+}
+
+// validatePrefixParameters checks for unknown reserved keys in parameters and
+// empty values for reserved keys.
+func validatePrefixedParameters(param map[string]string) error {
+	for k, v := range param {
+		if strings.HasPrefix(k, replicationParameterPrefix) {
+			switch k {
+			case prefixedReplicationSecretNameKey:
+				if v == "" {
+					return errors.New("secret name cannot be empty")
+				}
+			case prefixedReplicationSecretNamespaceKey:
+				if v == "" {
+					return errors.New("secret namespace cannot be empty")
+				}
+			// keep adding known prefixes to this list.
+			default:
+				return fmt.Errorf("found unknown parameter key %q with reserved prefix %s", k, replicationParameterPrefix)
+			}
+		}
+	}
+	return nil
 }
