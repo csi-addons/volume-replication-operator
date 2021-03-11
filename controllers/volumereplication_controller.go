@@ -36,13 +36,14 @@ import (
 )
 
 const (
-	pvcDataSource           = "PersistentVolumeClaim"
-	enableVolumeReplication = "Enable volume replication"
-	// TODO remove comment signature when use disableVolumeReplication
-	// disableVolumeReplication = "Disable volume replication"
-	promoteVolume = "Promote volume"
-	demoteVolume  = "Demote volume"
-	resyncVolume  = "Resync volume"
+	pvcDataSource            = "PersistentVolumeClaim"
+	enableVolumeReplication  = "Enable volume replication"
+	disableVolumeReplication = "Disable volume replication"
+	promoteVolume            = "Promote volume"
+	demoteVolume             = "Demote volume"
+	resyncVolume             = "Resync volume"
+
+	volumeReplicationFinalizer = "replication.storage.openshift.io"
 )
 
 // VolumeReplicationReconciler reconciles a VolumeReplication object
@@ -127,6 +128,36 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	}
 
 	r.Log.Info("volume handle", volumeHandle)
+
+	// check if the object is being deleted
+	if instance.GetDeletionTimestamp().IsZero() {
+		if !contains(instance.GetFinalizers(), volumeReplicationFinalizer) {
+			r.Log.Info("finalizer not found for volumeReplication object. Adding finalizer", "objectName", instance.Name, "finalizer", volumeReplicationFinalizer)
+			instance.ObjectMeta.Finalizers = append(instance.ObjectMeta.Finalizers, volumeReplicationFinalizer)
+			if err := r.Client.Update(context.TODO(), instance); err != nil {
+				r.Log.Error(err, "failed to update volumeReplication object with finalizer", "objectName", instance.Name, "finalizer", volumeReplicationFinalizer)
+				return reconcile.Result{}, err
+			}
+		}
+	} else {
+		if contains(instance.GetFinalizers(), volumeReplicationFinalizer) {
+			failedTask, err := r.disableVolumeReplication(volumeHandle, parameters, secret)
+			if err != nil {
+				r.Log.Error(err, "task failed", "taskName", failedTask)
+				return ctrl.Result{}, err
+			}
+
+			r.Log.Info("removing finalizer from volumeReplication object", "objectName", instance.Name, "finalizer", volumeReplicationFinalizer)
+			// once all finalizers have been removed, the object will be deleted
+			instance.ObjectMeta.Finalizers = remove(instance.ObjectMeta.Finalizers, volumeReplicationFinalizer)
+			if err := r.Client.Update(context.TODO(), instance); err != nil {
+				r.Log.Error(err, "failed to remove finalizer from volumeReplication object", "objectName", instance.Name, "finalizer", volumeReplicationFinalizer)
+				return reconcile.Result{}, err
+			}
+		}
+		r.Log.Info("volumeReplication object is terminated, skipping reconciliation", "objectName", instance.Name)
+		return ctrl.Result{}, nil
+	}
 
 	switch instance.Spec.ImageState {
 	case replicationv1alpha1.Primary:
@@ -238,4 +269,23 @@ func (r *VolumeReplicationReconciler) resyncVolume(volumeID string, parameters, 
 	}
 
 	return tasks.RunAll(resyncVolumeTasks)
+}
+
+// disableVolumeReplication defines and runs a set of tasks required to disable volume replication
+func (r *VolumeReplicationReconciler) disableVolumeReplication(volumeID string, parameters, secrets map[string]string) (string, error) {
+	c := replication.CommonRequestParameters{
+		VolumeID:    volumeID,
+		Parameters:  parameters,
+		Secrets:     secrets,
+		Replication: r.Replication,
+	}
+
+	var disableVolumeReplicationTasks = []*tasks.TaskSpec{
+		{
+			Name: disableVolumeReplication,
+			Task: replication.NewDisableTask(c),
+		},
+	}
+
+	return tasks.RunAll(disableVolumeReplicationTasks)
 }
