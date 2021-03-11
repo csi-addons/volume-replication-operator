@@ -94,6 +94,17 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	// remove the prefix keys in volume replication class parameters
 	parameters := filterPrefixedParameters(replicationParameterPrefix, vrcObj.Spec.Parameters)
 
+	// get secret
+	secretName := vrcObj.Spec.Parameters[prefixedReplicationSecretNameKey]
+	secretNamespace := vrcObj.Spec.Parameters[prefixedReplicationSecretNamespaceKey]
+	secret := make(map[string]string)
+	if secretName != "" && secretNamespace != "" {
+		secret, err = r.getSecret(secretName, secretNamespace)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+	}
+
 	var volumeHandle string
 	nameSpacedName := types.NamespacedName{Name: instance.Spec.DataSource.Name, Namespace: req.Namespace}
 	switch instance.Spec.DataSource.Kind {
