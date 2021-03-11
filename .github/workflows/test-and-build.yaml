@@ -1,4 +1,4 @@
-name: make test
+name: docker-build
 
 on:
   pull_request:
@@ -6,7 +6,7 @@ on:
 
 jobs:
   test:
-    name: Test
+    name: test and build
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -26,7 +26,7 @@ jobs:
         mkdir -p /home/runner/go/src/github.com/kube-storage
         cp -r /home/runner/work/volume-replication-operator/volume-replication-operator /home/runner/go/src/github.com/kube-storage
 
-    - name: run tests
+    - name: run tests and build docker image
       working-directory: "/home/runner/go/src/github.com/kube-storage/volume-replication-operator"
       env:
         GOPATH: /home/runner/go
@@ -36,4 +36,4 @@ jobs:
         wget https://github.com/kubernetes-sigs/kubebuilder/releases/download/v"$VERSION"/kubebuilder_"$VERSION"_linux_amd64.tar.gz
         tar -zxvf kubebuilder_"$VERSION"_linux_amd64.tar.gz
         export KUBEBUILDER_ASSETS="$(pwd)/kubebuilder_"$VERSION"_linux_amd64/bin"
-        make test
+        make docker-build
