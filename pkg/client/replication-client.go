@@ -36,7 +36,7 @@ type VolumeReplication interface {
 	// DisableVolumeReplication RPC call to disable the volume replication.
 	DisableVolumeReplication(volumeID string, secrets, parameters map[string]string) (*replicationlib.DisableVolumeReplicationResponse, error)
 	// PromoteVolume RPC call to promote the volume.
-	PromoteVolume(volumeID string, secrets, parameters map[string]string) (*replicationlib.
+	PromoteVolume(volumeID string, force bool, secrets, parameters map[string]string) (*replicationlib.
 		PromoteVolumeResponse, error)
 	// DemoteVolume RPC call to demote the volume.
 	DemoteVolume(volumeID string, secrets, parameters map[string]string) (*replicationlib.
@@ -81,9 +81,10 @@ func (rc *replicationClient) DisableVolumeReplication(volumeID string, secrets, 
 }
 
 // PromoteVolume RPC call to promote the volume.
-func (rc *replicationClient) PromoteVolume(volumeID string, secrets, parameters map[string]string) (*replicationlib.PromoteVolumeResponse, error) {
+func (rc *replicationClient) PromoteVolume(volumeID string, force bool, secrets, parameters map[string]string) (*replicationlib.PromoteVolumeResponse, error) {
 	req := &replicationlib.PromoteVolumeRequest{
 		VolumeId:   volumeID,
+		Force:      force,
 		Parameters: parameters,
 		Secrets:    secrets,
 	}

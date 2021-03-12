@@ -20,11 +20,12 @@ package replication
 type PromoteVolumeTask struct {
 	// params required for this task
 	CommonRequestParameters
+	Force bool
 }
 
 // NewPromoteVolumeTask returns a PromoteVolumeTask object
-func NewPromoteVolumeTask(c CommonRequestParameters) *PromoteVolumeTask {
-	return &PromoteVolumeTask{c}
+func NewPromoteVolumeTask(c CommonRequestParameters, force bool) *PromoteVolumeTask {
+	return &PromoteVolumeTask{CommonRequestParameters: c, Force: force}
 }
 
 // Run is used to run PromoteVolume task
@@ -32,6 +33,7 @@ func (p *PromoteVolumeTask) Run() error {
 	// perform sub-tasks
 	_, err := p.Replication.PromoteVolume(
 		p.CommonRequestParameters.VolumeID,
+		p.Force,
 		p.CommonRequestParameters.Secrets,
 		p.CommonRequestParameters.Parameters,
 	)
