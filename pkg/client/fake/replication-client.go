@@ -27,7 +27,7 @@ type ReplicationClient struct {
 	// DisableVolumeReplicationMock mocks DisableVolumeReplication RPC call.
 	DisableVolumeReplicationMock func(volumeID string, secrets, parameters map[string]string) (*replicationlib.DisableVolumeReplicationResponse, error)
 	// PromoteVolumeMock mocks PromoteVolume RPC call.
-	PromoteVolumeMock func(volumeID string, secrets, parameters map[string]string) (*replicationlib.PromoteVolumeResponse, error)
+	PromoteVolumeMock func(volumeID string, force bool, secrets, parameters map[string]string) (*replicationlib.PromoteVolumeResponse, error)
 	// DemoteVolumeMock mocks DemoteVolume RPC call.
 	DemoteVolumeMock func(volumeID string, secrets, parameters map[string]string) (*replicationlib.DemoteVolumeResponse, error)
 	// ResyncVolumeMock mocks ResyncVolume RPC call.
@@ -45,8 +45,8 @@ func (rc *ReplicationClient) DisableVolumeReplication(volumeID string, secrets, 
 }
 
 // PromoteVolume calls PromoteVolumeMock mock function.
-func (rc *ReplicationClient) PromoteVolume(volumeID string, secrets, parameters map[string]string) (*replicationlib.PromoteVolumeResponse, error) {
-	return rc.PromoteVolumeMock(volumeID, secrets, parameters)
+func (rc *ReplicationClient) PromoteVolume(volumeID string, force bool, secrets, parameters map[string]string) (*replicationlib.PromoteVolumeResponse, error) {
+	return rc.PromoteVolumeMock(volumeID, force, secrets, parameters)
 }
 
 // DemoteVolume calls DemoteVolumeMock mock function.

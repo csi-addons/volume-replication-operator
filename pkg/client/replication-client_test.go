@@ -82,23 +82,24 @@ func TestPromoteVolume(t *testing.T) {
 	var client = NewReplicationClient(&grpc.ClientConn{}, time.Minute)
 	// return success response
 	mockedPromoteVolume := &fake.ReplicationClient{
-		PromoteVolumeMock: func(volumeID string, secrets, parameters map[string]string) (*replicationlib.PromoteVolumeResponse, error) {
+		PromoteVolumeMock: func(volumeID string, force bool, secrets, parameters map[string]string) (*replicationlib.PromoteVolumeResponse, error) {
 			return &replicationlib.PromoteVolumeResponse{}, nil
 		},
 	}
+	force := false
 	client = mockedPromoteVolume
-	resp, err := client.PromoteVolume("", nil, nil)
+	resp, err := client.PromoteVolume("", force, nil, nil)
 	assert.Equal(t, &replicationlib.PromoteVolumeResponse{}, resp)
 	assert.Nil(t, err)
 
 	// return error
 	mockedPromoteVolume = &fake.ReplicationClient{
-		PromoteVolumeMock: func(volumeID string, secrets, parameters map[string]string) (*replicationlib.PromoteVolumeResponse, error) {
+		PromoteVolumeMock: func(volumeID string, force bool, secrets, parameters map[string]string) (*replicationlib.PromoteVolumeResponse, error) {
 			return nil, errors.New("failed to promote volume")
 		},
 	}
 	client = mockedPromoteVolume
-	resp, err = client.PromoteVolume("", nil, nil)
+	resp, err = client.PromoteVolume("", force, nil, nil)
 	assert.Nil(t, resp)
 	assert.NotNil(t, err)
 }

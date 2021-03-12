@@ -216,6 +216,7 @@ func (r *VolumeReplicationReconciler) markVolumeAsPrimary(volumeID string, param
 		Secrets:     secrets,
 		Replication: r.Replication,
 	}
+	force := false
 	var markVolumeAsPrimaryTasks = []*tasks.TaskSpec{
 		{
 			Name: enableVolumeReplication,
@@ -223,7 +224,7 @@ func (r *VolumeReplicationReconciler) markVolumeAsPrimary(volumeID string, param
 		},
 		{
 			Name: promoteVolume,
-			Task: replication.NewPromoteVolumeTask(c),
+			Task: replication.NewPromoteVolumeTask(c, force),
 		},
 	}
 
