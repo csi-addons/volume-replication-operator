@@ -28,11 +28,11 @@ func NewDemoteVolumeTask(c CommonRequestParameters) *DemoteVolumeTask {
 }
 
 // Run is used to run DemoteVolume task
-func (d *DemoteVolumeTask) Run() error {
-	_, err := d.Replication.DemoteVolume(
+func (d *DemoteVolumeTask) Run() (interface{}, error) {
+	resp, err := d.Replication.DemoteVolume(
 		d.CommonRequestParameters.VolumeID,
 		d.CommonRequestParameters.Secrets,
 		d.CommonRequestParameters.Parameters,
 	)
-	return err
+	return resp, err
 }

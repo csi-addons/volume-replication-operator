@@ -141,9 +141,8 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		}
 	} else {
 		if contains(instance.GetFinalizers(), volumeReplicationFinalizer) {
-			failedTask, err := r.disableVolumeReplication(volumeHandle, parameters, secret)
+			err := r.disableVolumeReplication(volumeHandle, parameters, secret)
 			if err != nil {
-				r.Log.Error(err, "task failed", "taskName", failedTask)
 				return ctrl.Result{}, err
 			}
 
@@ -161,23 +160,20 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 	switch instance.Spec.ImageState {
 	case replicationv1alpha1.Primary:
-		failedTask, err := r.markVolumeAsPrimary(volumeHandle, parameters, secret)
+		err := r.markVolumeAsPrimary(volumeHandle, parameters, secret)
 		if err != nil {
-			r.Log.Error(err, "task failed", "taskName", failedTask)
 			return ctrl.Result{}, err
 		}
 
 	case replicationv1alpha1.Secondary:
-		failedTask, err := r.markVolumeAsSecondary(volumeHandle, parameters, secret)
+		err := r.markVolumeAsSecondary(volumeHandle, parameters, secret)
 		if err != nil {
-			r.Log.Error(err, "task failed", "taskName", failedTask)
 			return ctrl.Result{}, err
 		}
 
 	case replicationv1alpha1.Resync:
-		failedTask, err := r.resyncVolume(volumeHandle, parameters, secret)
+		err := r.resyncVolume(volumeHandle, parameters, secret)
 		if err != nil {
-			r.Log.Error(err, "task failed", "taskName", failedTask)
 			return ctrl.Result{}, err
 		}
 
@@ -209,7 +205,7 @@ func (r *VolumeReplicationReconciler) SetupWithManager(mgr ctrl.Manager, cfg *co
 }
 
 // markVolumeAsPrimary defines and runs a set of tasks required to mark a volume as primary
-func (r *VolumeReplicationReconciler) markVolumeAsPrimary(volumeID string, parameters, secrets map[string]string) (string, error) {
+func (r *VolumeReplicationReconciler) markVolumeAsPrimary(volumeID string, parameters, secrets map[string]string) error {
 	c := replication.CommonRequestParameters{
 		VolumeID:    volumeID,
 		Parameters:  parameters,
@@ -228,11 +224,19 @@ func (r *VolumeReplicationReconciler) markVolumeAsPrimary(volumeID string, param
 		},
 	}
 
-	return tasks.RunAll(markVolumeAsPrimaryTasks)
+	resp := tasks.RunAll(markVolumeAsPrimaryTasks)
+	// Check error for all tasks and return error
+	for _, re := range resp {
+		if re.Error != nil {
+			r.Log.Error(re.Error, "task failed", "taskName", re.Name)
+			return re.Error
+		}
+	}
+	return nil
 }
 
 // markVolumeAsSecondary defines and runs a set of tasks required to mark a volume as secondary
-func (r *VolumeReplicationReconciler) markVolumeAsSecondary(volumeID string, parameters, secrets map[string]string) (string, error) {
+func (r *VolumeReplicationReconciler) markVolumeAsSecondary(volumeID string, parameters, secrets map[string]string) error {
 	c := replication.CommonRequestParameters{
 		VolumeID:    volumeID,
 		Parameters:  parameters,
@@ -250,11 +254,22 @@ func (r *VolumeReplicationReconciler) markVolumeAsSecondary(volumeID string, par
 		},
 	}
 
-	return tasks.RunAll(markVolumeAsSecondaryTasks)
+	resp := tasks.RunAll(markVolumeAsSecondaryTasks)
+	// Check error for all tasks and return error
+	for _, re := range resp {
+		if re.Error != nil {
+			r.Log.Error(re.Error, "task failed", "taskName", re.Name)
+			return re.Error
+		}
+		// TODO check for ready state of volume in Resync Task response. If the
+		// volume is not ready we need to add it to queue and Re-Request the
+		// Resync the volume.
+	}
+	return nil
 }
 
 // resyncVolume defines and runs a set of tasks required to resync the volume
-func (r *VolumeReplicationReconciler) resyncVolume(volumeID string, parameters, secrets map[string]string) (string, error) {
+func (r *VolumeReplicationReconciler) resyncVolume(volumeID string, parameters, secrets map[string]string) error {
 	c := replication.CommonRequestParameters{
 		VolumeID:    volumeID,
 		Parameters:  parameters,
@@ -269,11 +284,22 @@ func (r *VolumeReplicationReconciler) resyncVolume(volumeID string, parameters, 
 		},
 	}
 
-	return tasks.RunAll(resyncVolumeTasks)
+	resp := tasks.RunAll(resyncVolumeTasks)
+
+	// Check error for all tasks and return error
+	for _, re := range resp {
+		if re.Error != nil {
+			r.Log.Error(re.Error, "task failed", "taskName", re.Name)
+			return re.Error
+		}
+		// TODO check for ready state of volume. If the volume is not ready we
+		// need to add it to queue and Re-Request the Resync the volume.
+	}
+	return nil
 }
 
 // disableVolumeReplication defines and runs a set of tasks required to disable volume replication
-func (r *VolumeReplicationReconciler) disableVolumeReplication(volumeID string, parameters, secrets map[string]string) (string, error) {
+func (r *VolumeReplicationReconciler) disableVolumeReplication(volumeID string, parameters, secrets map[string]string) error {
 	c := replication.CommonRequestParameters{
 		VolumeID:    volumeID,
 		Parameters:  parameters,
@@ -288,5 +314,13 @@ func (r *VolumeReplicationReconciler) disableVolumeReplication(volumeID string, 
 		},
 	}
 
-	return tasks.RunAll(disableVolumeReplicationTasks)
+	resp := tasks.RunAll(disableVolumeReplicationTasks)
+	// Check error for all tasks and return error
+	for _, re := range resp {
+		if re.Error != nil {
+			r.Log.Error(re.Error, "task failed", "taskName", re.Name)
+			return re.Error
+		}
+	}
+	return nil
 }

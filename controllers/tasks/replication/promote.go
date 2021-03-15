@@ -29,13 +29,13 @@ func NewPromoteVolumeTask(c CommonRequestParameters, force bool) *PromoteVolumeT
 }
 
 // Run is used to run PromoteVolume task
-func (p *PromoteVolumeTask) Run() error {
+func (p *PromoteVolumeTask) Run() (interface{}, error) {
 	// perform sub-tasks
-	_, err := p.Replication.PromoteVolume(
+	resp, err := p.Replication.PromoteVolume(
 		p.CommonRequestParameters.VolumeID,
 		p.Force,
 		p.CommonRequestParameters.Secrets,
 		p.CommonRequestParameters.Parameters,
 	)
-	return err
+	return resp, err
 }

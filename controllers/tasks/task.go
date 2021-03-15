@@ -23,19 +23,34 @@ type TaskSpec struct {
 	KnownErrors []error
 }
 
+// TaskResponse represents the response of each task
+type TaskResponse struct {
+	Name     string
+	Response interface{}
+	Error    error
+}
+
 // Task is a specific task to be done by controller
 type Task interface {
-	Run() error
+	Run() (interface{}, error)
 }
 
 // RunAll executes all the Task in the given list of TaskSpec
-func RunAll(tasks []*TaskSpec) (string, error) {
+func RunAll(tasks []*TaskSpec) []*TaskResponse {
+	taskResp := []*TaskResponse{}
 	for _, task := range tasks {
-		if err := task.Task.Run(); err != nil {
+		resp, err := task.Task.Run()
+		r := &TaskResponse{
+			Name:     task.Name,
+			Response: resp,
+			Error:    err,
+		}
+		taskResp = append(taskResp, r)
+		if err != nil {
 			// if err is in KnownErrors then continue
 			// else return
-			return task.Name, err
+			return taskResp
 		}
 	}
-	return "", nil
+	return taskResp
 }

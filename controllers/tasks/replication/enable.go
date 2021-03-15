@@ -28,13 +28,13 @@ func NewEnableTask(c CommonRequestParameters) *EnableTask {
 }
 
 // Run is used to run Enable task
-func (e *EnableTask) Run() error {
+func (e *EnableTask) Run() (interface{}, error) {
 	// perform sub-tasks
-	_, err := e.Replication.EnableVolumeReplication(
+	resp, err := e.Replication.EnableVolumeReplication(
 		e.CommonRequestParameters.VolumeID,
 		e.CommonRequestParameters.Secrets,
 		e.CommonRequestParameters.Parameters,
 	)
 
-	return err
+	return resp, err
 }
