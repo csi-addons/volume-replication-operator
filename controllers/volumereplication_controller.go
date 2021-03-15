@@ -24,6 +24,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -91,6 +92,7 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	// Get VolumeReplicationClass
 	vrcObj, err := r.getVolumeReplicaCLass(instance.Spec.VolumeReplicationClass)
 	if err != nil {
+		_ = r.updateReplicationStatus(instance, replicationv1alpha1.ReplicationFailure, err.Error())
 		return ctrl.Result{}, err
 	}
 
@@ -100,6 +102,7 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 	err = validatePrefixedParameters(vrcObj.Spec.Parameters)
 	if err != nil {
+		_ = r.updateReplicationStatus(instance, replicationv1alpha1.ReplicationFailure, err.Error())
 		r.Log.Error(err, "failed to validate prefix parameters", "volumeReplicationClass", instance.Spec.VolumeReplicationClass)
 		return ctrl.Result{}, err
 	}
@@ -113,6 +116,7 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	if secretName != "" && secretNamespace != "" {
 		secret, err = r.getSecret(secretName, secretNamespace)
 		if err != nil {
+			_ = r.updateReplicationStatus(instance, replicationv1alpha1.ReplicationFailure, err.Error())
 			return reconcile.Result{}, err
 		}
 	}
@@ -123,11 +127,13 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	case pvcDataSource:
 		_, pv, err := r.getPVCDataSource(nameSpacedName)
 		if err != nil {
+			_ = r.updateReplicationStatus(instance, replicationv1alpha1.ReplicationFailure, err.Error())
 			r.Log.Error(err, "failed to get dataSource for PVC", "dataSourceName", nameSpacedName.Name)
 			return ctrl.Result{}, err
 		}
 		volumeHandle = pv.Spec.CSI.VolumeHandle
 	default:
+		_ = r.updateReplicationStatus(instance, replicationv1alpha1.ReplicationFailure, ("unsupported datasource kind " + instance.Spec.DataSource.Kind))
 		return ctrl.Result{}, fmt.Errorf("unsupported datasource kind %q", instance.Spec.DataSource.Kind)
 	}
 
@@ -162,36 +168,58 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return ctrl.Result{}, nil
 	}
 
-	switch instance.Spec.ReplicationState {
-	case replicationv1alpha1.Primary:
-		err := r.markVolumeAsPrimary(instance, volumeHandle, parameters, secret)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-
-	case replicationv1alpha1.Secondary:
-		requeueForResync, err := r.markVolumeAsSecondary(instance, volumeHandle, parameters, secret)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-		if requeueForResync {
-			return ctrl.Result{Requeue: true}, nil
-		}
-
-	case replicationv1alpha1.Resync:
-		requeueForResync, err := r.resyncVolume(instance, volumeHandle, parameters, secret)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-		if requeueForResync {
-			return ctrl.Result{Requeue: true}, nil
-		}
-
-	default:
-		return ctrl.Result{}, fmt.Errorf("unsupported replication state %q", instance.Spec.ReplicationState)
+	instance.Status.LastStartTime = metav1.Now()
+	instance.Status.LastCompletionTime.Reset()
+	if err = r.Client.Update(context.TODO(), instance); err != nil {
+		r.Log.Error(err, "Failed to update status", "Object", instance.Name)
+		return reconcile.Result{}, err
 	}
 
-	return ctrl.Result{}, nil
+	var replicationErr error
+	var requeueForResync bool
+
+	switch instance.Spec.ReplicationState {
+	case replicationv1alpha1.Primary:
+		replicationErr = r.markVolumeAsPrimary(instance, volumeHandle, parameters, secret)
+
+	case replicationv1alpha1.Secondary:
+		requeueForResync, replicationErr = r.markVolumeAsSecondary(instance, volumeHandle, parameters, secret)
+
+	case replicationv1alpha1.Resync:
+		requeueForResync, replicationErr = r.resyncVolume(instance, volumeHandle, parameters, secret)
+
+	default:
+		replicationErr = fmt.Errorf("unsupported image state %q", instance.Spec.ReplicationState)
+	}
+
+	if replicationErr != nil {
+		_ = r.updateReplicationStatus(instance, replicationv1alpha1.ReplicationFailure, replicationErr.Error())
+		return ctrl.Result{}, replicationErr
+	}
+
+	if requeueForResync {
+		return ctrl.Result{Requeue: true}, nil
+	}
+
+	instance.Status.LastCompletionTime = metav1.Now()
+	if instance.Spec.ReplicationState == replicationv1alpha1.Resync {
+		err = r.updateReplicationStatus(instance, replicationv1alpha1.Replicating, "volume is marked for resyncing")
+	} else {
+		err = r.updateReplicationStatus(instance, replicationv1alpha1.Replicating, "volume is marked "+string(instance.Spec.ReplicationState))
+	}
+
+	return ctrl.Result{}, err
+}
+
+func (r *VolumeReplicationReconciler) updateReplicationStatus(instance *replicationv1alpha1.VolumeReplication, state replicationv1alpha1.State, message string) error {
+	instance.Status.State = state
+	instance.Status.Message = message
+	if err := r.Client.Update(context.TODO(), instance); err != nil {
+		r.Log.Error(err, "Failed to update status", "Object", instance.Name)
+		return err
+	}
+
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
