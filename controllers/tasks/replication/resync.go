@@ -28,11 +28,11 @@ func NewResyncVolumeTask(c CommonRequestParameters) *ResyncVolumeTask {
 }
 
 // Run is used to run ResyncVolume task
-func (r *ResyncVolumeTask) Run() error {
-	_, err := r.Replication.ResyncVolume(
+func (r *ResyncVolumeTask) Run() (interface{}, error) {
+	resp, err := r.Replication.ResyncVolume(
 		r.CommonRequestParameters.VolumeID,
 		r.CommonRequestParameters.Secrets,
 		r.CommonRequestParameters.Parameters,
 	)
-	return err
+	return resp, err
 }

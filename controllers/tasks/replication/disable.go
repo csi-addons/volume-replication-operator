@@ -28,11 +28,11 @@ func NewDisableTask(c CommonRequestParameters) *DisableTask {
 }
 
 // Run is used to run Disable task
-func (d *DisableTask) Run() error {
-	_, err := d.Replication.DisableVolumeReplication(
+func (d *DisableTask) Run() (interface{}, error) {
+	resp, err := d.Replication.DisableVolumeReplication(
 		d.CommonRequestParameters.VolumeID,
 		d.CommonRequestParameters.Secrets,
 		d.CommonRequestParameters.Parameters,
 	)
-	return err
+	return resp, err
 }
