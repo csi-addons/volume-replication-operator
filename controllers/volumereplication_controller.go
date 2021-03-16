@@ -21,6 +21,8 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -40,6 +42,7 @@ const (
 	enableVolumeReplication  = "Enable volume replication"
 	disableVolumeReplication = "Disable volume replication"
 	promoteVolume            = "Promote volume"
+	forcePromoteVolume       = "Promote volume (forced)"
 	demoteVolume             = "Demote volume"
 	resyncVolume             = "Resync volume"
 
@@ -160,7 +163,7 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 	switch instance.Spec.ImageState {
 	case replicationv1alpha1.Primary:
-		err := r.markVolumeAsPrimary(volumeHandle, parameters, secret)
+		err := r.markVolumeAsPrimary(instance, volumeHandle, parameters, secret)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
@@ -205,33 +208,64 @@ func (r *VolumeReplicationReconciler) SetupWithManager(mgr ctrl.Manager, cfg *co
 }
 
 // markVolumeAsPrimary defines and runs a set of tasks required to mark a volume as primary
-func (r *VolumeReplicationReconciler) markVolumeAsPrimary(volumeID string, parameters, secrets map[string]string) error {
+func (r *VolumeReplicationReconciler) markVolumeAsPrimary(volumeReplicationObject *replicationv1alpha1.VolumeReplication, volumeID string, parameters, secrets map[string]string) error {
 	c := replication.CommonRequestParameters{
 		VolumeID:    volumeID,
 		Parameters:  parameters,
 		Secrets:     secrets,
 		Replication: r.Replication,
 	}
-	force := false
-	var markVolumeAsPrimaryTasks = []*tasks.TaskSpec{
-		{
-			Name: enableVolumeReplication,
-			Task: replication.NewEnableTask(c),
-		},
-		{
-			Name: promoteVolume,
-			Task: replication.NewPromoteVolumeTask(c, force),
-		},
-	}
+	var err error
 
-	resp := tasks.RunAll(markVolumeAsPrimaryTasks)
-	// Check error for all tasks and return error
-	for _, re := range resp {
-		if re.Error != nil {
-			r.Log.Error(re.Error, "task failed", "taskName", re.Name)
-			return re.Error
+	if volumeReplicationObject.Status.State != replicationv1alpha1.Replicating {
+		enableVolumeReplicationTask := []*tasks.TaskSpec{
+			{
+				Name: enableVolumeReplication,
+				Task: replication.NewEnableTask(c),
+			},
+		}
+		resp := tasks.RunAll(enableVolumeReplicationTask)
+		for _, re := range resp {
+			if re.Error != nil {
+				r.Log.Error(re.Error, "task failed", "taskName", re.Name)
+				return re.Error
+			}
+		}
+		volumeReplicationObject.Status.State = replicationv1alpha1.Replicating
+		err = r.Client.Status().Update(context.TODO(), volumeReplicationObject, nil)
+		if err != nil {
+			return err
 		}
 	}
+
+	promoteVolumeTasks := []*tasks.TaskSpec{
+		{
+			Name: promoteVolume,
+			Task: replication.NewPromoteVolumeTask(c, false),
+			KnownErrors: []codes.Code{
+				codes.FailedPrecondition,
+			},
+		},
+	}
+	resp := tasks.RunAll(promoteVolumeTasks)
+
+	isKnownError := r.hasKnownGRPCError(promoteVolumeTasks, resp)
+	if isKnownError {
+		forcePromoteVolumeTasks := []*tasks.TaskSpec{
+			{
+				Name: forcePromoteVolume,
+				Task: replication.NewPromoteVolumeTask(c, true),
+			},
+		}
+		resp := tasks.RunAll(forcePromoteVolumeTasks)
+		for _, re := range resp {
+			if re.Error != nil {
+				r.Log.Error(re.Error, "task failed", "taskName", re.Name)
+				return re.Error
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -323,4 +357,28 @@ func (r *VolumeReplicationReconciler) disableVolumeReplication(volumeID string, 
 		}
 	}
 	return nil
+}
+
+func (r *VolumeReplicationReconciler) hasKnownGRPCError(tasks []*tasks.TaskSpec, responses []*tasks.TaskResponse) bool {
+	for _, re := range responses {
+		if re.Error != nil {
+			s, ok := status.FromError(re.Error)
+			if !ok {
+				// This is not gRPC error. The operation must have failed before gRPC
+				// method was called, otherwise we would get gRPC error.
+				r.Log.Error(re.Error, "task failed", "taskName", re.Name)
+				return false
+			}
+			for _, task := range tasks {
+				for _, e := range task.KnownErrors {
+					if s.Code() == e {
+						return true
+					}
+				}
+			}
+			r.Log.Error(re.Error, "task failed", "taskName", re.Name)
+			return false
+		}
+	}
+	return false
 }

@@ -16,11 +16,15 @@ limitations under the License.
 
 package tasks
 
+import (
+	"google.golang.org/grpc/codes"
+)
+
 // TaskSpec is the specification for each Task
 type TaskSpec struct {
 	Name        string
 	Task        Task
-	KnownErrors []error
+	KnownErrors []codes.Code
 }
 
 // TaskResponse represents the response of each task
@@ -46,11 +50,6 @@ func RunAll(tasks []*TaskSpec) []*TaskResponse {
 			Error:    err,
 		}
 		taskResp = append(taskResp, r)
-		if err != nil {
-			// if err is in KnownErrors then continue
-			// else return
-			return taskResp
-		}
 	}
 	return taskResp
 }
