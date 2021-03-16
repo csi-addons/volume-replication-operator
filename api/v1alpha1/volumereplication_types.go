@@ -44,6 +44,9 @@ const (
 
 	// ReplicationFailure means the last replication operation failed
 	ReplicationFailure ReplicationState = "Failed"
+
+	//Resyncing means that the image is resyncing
+	Resyncing ReplicationState = "Resyncing"
 )
 
 // VolumeReplicationSpec defines the desired state of VolumeReplication
