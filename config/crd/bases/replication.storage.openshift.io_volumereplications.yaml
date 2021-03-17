@@ -38,7 +38,7 @@ spec:
             properties:
               dataSource:
                 description: DataSource represents the object associated with the
-                  image
+                  volume
                 properties:
                   apiGroup:
                     description: APIGroup is the group for the resource being referenced.
@@ -56,10 +56,10 @@ spec:
                 - kind
                 - name
                 type: object
-              imageState:
-                description: ImageState represents the replication operation to be
-                  performed on the image. Supported operations are "primary", "secondary"
-                  and "resync"
+              replicationState:
+                description: ReplicationState represents the replication operation
+                  to be performed on the volume. Supported operations are "primary",
+                  "secondary" and "resync"
                 type: string
               volumeReplicationClass:
                 description: VolumeReplicationClass is the VolumeReplicationClass
@@ -67,7 +67,7 @@ spec:
                 type: string
             required:
             - dataSource
-            - imageState
+            - replicationState
             - volumeReplicationClass
             type: object
           status:
@@ -82,8 +82,7 @@ spec:
               message:
                 type: string
               state:
-                description: ReplicationState captures the latest state of the replication
-                  operation
+                description: State captures the latest state of the replication operation
                 type: string
             type: object
         type: object

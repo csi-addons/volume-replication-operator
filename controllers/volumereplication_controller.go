@@ -162,7 +162,7 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return ctrl.Result{}, nil
 	}
 
-	switch instance.Spec.ImageState {
+	switch instance.Spec.ReplicationState {
 	case replicationv1alpha1.Primary:
 		err := r.markVolumeAsPrimary(instance, volumeHandle, parameters, secret)
 		if err != nil {
@@ -188,7 +188,7 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		}
 
 	default:
-		return ctrl.Result{}, fmt.Errorf("unsupported image state %q", instance.Spec.ImageState)
+		return ctrl.Result{}, fmt.Errorf("unsupported replication state %q", instance.Spec.ReplicationState)
 	}
 
 	return ctrl.Result{}, nil

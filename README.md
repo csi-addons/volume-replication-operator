@@ -44,10 +44,10 @@ VolumeReplicationClass corresponding to the driver providing replication.
 
 `volumeReplicationClass` is the class providing replication
 
-`imageState` is the state of the image being referenced. Possible values are `primary`. `secondary` and `resync`.
-  + `primary` denotes that the image is primary
-  + `secondary` denotes that the image is secondary
-  + `resync` denotes that the image needs to be resynced
+`replicationState` is the state of the volume being referenced. Possible values are `primary`. `secondary` and `resync`.
+  + `primary` denotes that the volume is primary
+  + `secondary` denotes that the volume is secondary
+  + `resync` denotes that the volume needs to be resynced
 
 `dataSource` contains typed reference to the source being replicated.
   + `apiGroup` is the group for the resource being referenced. If apiGroup is not specified, the specified Kind must
@@ -63,7 +63,7 @@ metadata:
   namespace: default
 spec:
   volumeReplicationClass: volumereplicationclass-sample
-  imageState: primary
+  replicationState: primary
   dataSource:
     kind: PersistentVolumeClaim
     name: myPersistentVolumeClaim # should be in same namespace as VolumeReplication
@@ -75,13 +75,13 @@ spec:
 
 #### Failover
 
-In case of planned migration, update `imageState` to `secondary` in `VolumeReplication` CR at Primary Site. When the operator sees this change, it will pass the information down to the driver via GRPC request to mark the `dataSource` as secondary.
+In case of planned migration, update `replicationState` to `secondary` in `VolumeReplication` CR at Primary Site. When the operator sees this change, it will pass the information down to the driver via GRPC request to mark the `dataSource` as secondary.
 
-On the Secondary Site, create `VolumeReplication` CR pointing to the same `dataSource` with `imageState` as `primary`. When the operator sees this change, it will pass the information down to the driver via GRPC request to mark the dataSource as primary.
+On the Secondary Site, create `VolumeReplication` CR pointing to the same `dataSource` with `replicationState` as `primary`. When the operator sees this change, it will pass the information down to the driver via GRPC request to mark the dataSource as primary.
 
 #### Failback
 
-Once the planned work is done and you want to failback, update `imageState` from `primary` to `secondary` in current Primary Site and `secondary` to `primary` in current Secondary Site after it is recovered. These changes are detected by operator and information is passed down to the driver via GRPC request.
+Once the planned work is done and you want to failback, update `replicationState` from `primary` to `secondary` in current Primary Site and `secondary` to `primary` in current Secondary Site after it is recovered. These changes are detected by operator and information is passed down to the driver via GRPC request.
 
 ### Storage Disaster Recovery
 
@@ -91,4 +91,4 @@ In case of disaster recovery, create `VolumeReplication` CR at Secondary Site. S
 
 #### Failback
 
-Once the failed cluster is recovered and you want to failback, update `imageState` from `primary` to `secondary` in current Primary Site and `secondary` to `primary` in the recovered site. These changes are detected by operator and information is passed down to the driver via GRPC request to make the necessary changes.
+Once the failed cluster is recovered and you want to failback, update `replicationState` from `primary` to `secondary` in current Primary Site and `secondary` to `primary` in the recovered site. These changes are detected by operator and information is passed down to the driver via GRPC request to make the necessary changes.
