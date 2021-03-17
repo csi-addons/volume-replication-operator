@@ -21,32 +21,32 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// ImageState represents the replication operations to be performed on the image
-type ImageState string
-
-const (
-	// Primary ImageState enables mirroring and promotes the image to primary
-	Primary ImageState = "primary"
-
-	// Secondary ImageState demotes the image to secondary and resyncs the image if out of sync
-	Secondary ImageState = "secondary"
-
-	// Resync option resyncs the image
-	Resync ImageState = "resync"
-)
-
-// ReplicationState captures the latest state of the replication operation
+// ReplicationState represents the replication operations to be performed on the volume
 type ReplicationState string
 
 const (
-	// Replicating means the image is mirroring or replicating
-	Replicating ReplicationState = "Replicating"
+	// Primary ReplicationState enables mirroring and promotes the volume to primary
+	Primary ReplicationState = "primary"
+
+	// Secondary ReplicationState demotes the volume to secondary and resyncs the volume if out of sync
+	Secondary ReplicationState = "secondary"
+
+	// Resync option resyncs the volume
+	Resync ReplicationState = "resync"
+)
+
+// State captures the latest state of the replication operation
+type State string
+
+const (
+	// Replicating means the volume is mirroring or replicating
+	Replicating State = "Replicating"
 
 	// ReplicationFailure means the last replication operation failed
-	ReplicationFailure ReplicationState = "Failed"
+	ReplicationFailure State = "Failed"
 
-	//Resyncing means that the image is resyncing
-	Resyncing ReplicationState = "Resyncing"
+	//Resyncing means that the volume is resyncing
+	Resyncing State = "Resyncing"
 )
 
 // VolumeReplicationSpec defines the desired state of VolumeReplication
@@ -55,22 +55,22 @@ type VolumeReplicationSpec struct {
 	// +kubebuilder:validation:Required
 	VolumeReplicationClass string `json:"volumeReplicationClass"`
 
-	// ImageState represents the replication operation to be performed on the image.
+	// ReplicationState represents the replication operation to be performed on the volume.
 	// Supported operations are "primary", "secondary" and "resync"
 	// +kubebuilder:validation:Required
-	ImageState ImageState `json:"imageState"`
+	ReplicationState ReplicationState `json:"replicationState"`
 
-	// DataSource represents the object associated with the image
+	// DataSource represents the object associated with the volume
 	// +kubebuilder:validation:Required
 	DataSource corev1.TypedLocalObjectReference `json:"dataSource"`
 }
 
 // VolumeReplicationStatus defines the observed state of VolumeReplication
 type VolumeReplicationStatus struct {
-	State              ReplicationState `json:"state,omitempty"`
-	Message            string           `json:"message,omitempty"`
-	LastStartTime      metav1.Time      `json:"lastStartTime,omitempty"`
-	LastCompletionTime metav1.Time      `json:"lastCompletionTime,omitempty"`
+	State              State       `json:"state,omitempty"`
+	Message            string      `json:"message,omitempty"`
+	LastStartTime      metav1.Time `json:"lastStartTime,omitempty"`
+	LastCompletionTime metav1.Time `json:"lastCompletionTime,omitempty"`
 }
 
 // +kubebuilder:object:root=true
