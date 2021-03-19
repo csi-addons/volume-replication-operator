@@ -92,7 +92,7 @@ func main() {
 		os.Exit(1)
 	}
 	// unique electionID per operator
-	electionID := cfg.DriverName + "-" + leaderElectionNamespace
+	electionID := cfg.DriverName + "volume-replication-" + leaderElectionNamespace
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                     scheme,
