@@ -137,7 +137,7 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return ctrl.Result{}, fmt.Errorf("unsupported datasource kind %q", instance.Spec.DataSource.Kind)
 	}
 
-	r.Log.Info("volume handle", volumeHandle)
+	r.Log.Info("volume handle", "Name", volumeHandle)
 
 	// check if the object is being deleted
 	if instance.GetDeletionTimestamp().IsZero() {
