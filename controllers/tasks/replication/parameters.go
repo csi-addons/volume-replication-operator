@@ -24,6 +24,6 @@ import (
 type CommonRequestParameters struct {
 	VolumeID    string
 	Parameters  map[string]string
-	Secrets     map[string]string
+	Secrets     map[string][]byte
 	Replication client.VolumeReplication
 }

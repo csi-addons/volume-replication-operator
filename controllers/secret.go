@@ -25,7 +25,7 @@ import (
 )
 
 // getSecret retrives the secrets based on name and namespace input
-func (r *VolumeReplicationReconciler) getSecret(name, namespace string) (map[string]string, error) {
+func (r *VolumeReplicationReconciler) getSecret(name, namespace string) (map[string][]byte, error) {
 	namespacedName := types.NamespacedName{Name: name, Namespace: namespace}
 	secret := &corev1.Secret{}
 	err := r.Client.Get(context.TODO(), namespacedName, secret)
@@ -36,5 +36,5 @@ func (r *VolumeReplicationReconciler) getSecret(name, namespace string) (map[str
 		r.Log.Error(err, "error getting secret", "Secret Name", name, "Secret Namespace", namespace)
 		return nil, err
 	}
-	return secret.StringData, nil
+	return secret.Data, nil
 }

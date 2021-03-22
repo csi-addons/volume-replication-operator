@@ -229,6 +229,8 @@ github.com/hashicorp/golang-lru v0.5.4 h1:YDjusn29QI/Das2iO9M0BHnIbxPeyuCHsjMW+l
 github.com/hashicorp/golang-lru v0.5.4/go.mod h1:iADmTwqILo4mZ8BN3D2Q6+9jd8WM5uGBxy+E8yxSoD4=
 github.com/hashicorp/hcl v1.0.0/go.mod h1:E5yfLk+7swimpb2L/Alb/PJmXilQ/rhwaUYs4T20WEQ=
 github.com/hpcloud/tail v1.0.0/go.mod h1:ab1qPbhIpdTxEkNHXyeSf5vhxWSCs/tWer42PpOxQnU=
+github.com/iamniting/spec v0.1.1 h1:T6NdtWusW2UrOlPrZdELVDisKUhoEo5hCAoFF0y4RHo=
+github.com/iamniting/spec v0.1.1/go.mod h1:zRzxQVHrq95HLPzpPvfQh32VvHHZj2V6lA3muffg2jY=
 github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
 github.com/imdario/mergo v0.3.5/go.mod h1:2EnlNZ0deacrJVfApfmtdGgDfMuh/nq6Ok1EcJh5FfA=
 github.com/imdario/mergo v0.3.10 h1:6q5mVkdH/vYmqngx7kZQTjJ5HRsx+ImorDIEQ+beJgc=
@@ -255,8 +257,6 @@ github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
 github.com/kr/pty v1.1.5/go.mod h1:9r2w37qlBe7rQ6e1fg1S/9xpWHSnaqNdHD3WcMdbPDA=
 github.com/kr/text v0.1.0 h1:45sCR5RtlFHMR4UwH9sdQ5TC8v0qDQCHnXt+kaKSTVE=
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
-github.com/kube-storage/spec v0.0.0-20210302071931-ad3b1446aba1 h1:DTcCQpcvrLEBUmByx/4UmG0Medlv/t4T6WY7GHdeTQc=
-github.com/kube-storage/spec v0.0.0-20210302071931-ad3b1446aba1/go.mod h1:aEM5cuaELIjQPTe4LdyAoR2XvkC5vtd1qz8LgGLf4BQ=
 github.com/kubernetes-csi/csi-lib-utils v0.9.1 h1:sGq6ifVujfMSkfTsMZip44Ttv8SDXvsBlFk9GdYl/b8=
 github.com/kubernetes-csi/csi-lib-utils v0.9.1/go.mod h1:8E2jVUX9j3QgspwHXa6LwyN7IHQDjW9jX3kwoWnSC+M=
 github.com/magiconair/properties v1.8.0/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=

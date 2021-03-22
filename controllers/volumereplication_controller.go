@@ -31,7 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	replicationlib "github.com/kube-storage/spec/lib/go/replication"
+	replicationlib "github.com/iamniting/spec/lib/go/replication"
 	replicationv1alpha1 "github.com/kube-storage/volume-replication-operator/api/v1alpha1"
 	"github.com/kube-storage/volume-replication-operator/controllers/tasks"
 	"github.com/kube-storage/volume-replication-operator/controllers/tasks/replication"
@@ -112,7 +112,7 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	// get secret
 	secretName := vrcObj.Spec.Parameters[prefixedReplicationSecretNameKey]
 	secretNamespace := vrcObj.Spec.Parameters[prefixedReplicationSecretNamespaceKey]
-	secret := make(map[string]string)
+	secret := make(map[string][]byte)
 	if secretName != "" && secretNamespace != "" {
 		secret, err = r.getSecret(secretName, secretNamespace)
 		if err != nil {
@@ -243,7 +243,10 @@ func (r *VolumeReplicationReconciler) SetupWithManager(mgr ctrl.Manager, cfg *co
 }
 
 // markVolumeAsPrimary defines and runs a set of tasks required to mark a volume as primary
-func (r *VolumeReplicationReconciler) markVolumeAsPrimary(volumeReplicationObject *replicationv1alpha1.VolumeReplication, volumeID string, parameters, secrets map[string]string) error {
+func (r *VolumeReplicationReconciler) markVolumeAsPrimary(
+	volumeReplicationObject *replicationv1alpha1.VolumeReplication,
+	volumeID string, parameters map[string]string, secrets map[string][]byte) error {
+
 	c := replication.CommonRequestParameters{
 		VolumeID:    volumeID,
 		Parameters:  parameters,
@@ -306,7 +309,7 @@ func (r *VolumeReplicationReconciler) markVolumeAsPrimary(volumeReplicationObjec
 
 // markVolumeAsSecondary defines and runs a set of tasks required to mark a volume as secondary
 func (r *VolumeReplicationReconciler) markVolumeAsSecondary(volumeReplicationObject *replicationv1alpha1.VolumeReplication,
-	volumeID string, parameters, secrets map[string]string) (bool, error) {
+	volumeID string, parameters map[string]string, secrets map[string][]byte) (bool, error) {
 	c := replication.CommonRequestParameters{
 		VolumeID:    volumeID,
 		Parameters:  parameters,
@@ -348,7 +351,7 @@ func (r *VolumeReplicationReconciler) markVolumeAsSecondary(volumeReplicationObj
 
 // resyncVolume defines and runs a set of tasks required to resync the volume
 func (r *VolumeReplicationReconciler) resyncVolume(volumeReplicationObject *replicationv1alpha1.VolumeReplication,
-	volumeID string, parameters, secrets map[string]string) (bool, error) {
+	volumeID string, parameters map[string]string, secrets map[string][]byte) (bool, error) {
 	c := replication.CommonRequestParameters{
 		VolumeID:    volumeID,
 		Parameters:  parameters,
@@ -397,7 +400,7 @@ func (r *VolumeReplicationReconciler) resyncVolume(volumeReplicationObject *repl
 }
 
 // disableVolumeReplication defines and runs a set of tasks required to disable volume replication
-func (r *VolumeReplicationReconciler) disableVolumeReplication(volumeID string, parameters, secrets map[string]string) error {
+func (r *VolumeReplicationReconciler) disableVolumeReplication(volumeID string, parameters map[string]string, secrets map[string][]byte) error {
 	c := replication.CommonRequestParameters{
 		VolumeID:    volumeID,
 		Parameters:  parameters,
