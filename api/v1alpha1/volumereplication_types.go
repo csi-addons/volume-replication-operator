@@ -67,10 +67,10 @@ type VolumeReplicationSpec struct {
 
 // VolumeReplicationStatus defines the observed state of VolumeReplication
 type VolumeReplicationStatus struct {
-	State              State       `json:"state,omitempty"`
-	Message            string      `json:"message,omitempty"`
-	LastStartTime      metav1.Time `json:"lastStartTime,omitempty"`
-	LastCompletionTime metav1.Time `json:"lastCompletionTime,omitempty"`
+	State              State        `json:"state,omitempty"`
+	Message            string       `json:"message,omitempty"`
+	LastStartTime      *metav1.Time `json:"lastStartTime,omitempty"`
+	LastCompletionTime *metav1.Time `json:"lastCompletionTime,omitempty"`
 }
 
 // +kubebuilder:object:root=true
