@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/go-logr/logr"
 	"google.golang.org/grpc/codes"
@@ -168,8 +169,7 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return ctrl.Result{}, nil
 	}
 
-	instance.Status.LastStartTime = metav1.Now()
-	instance.Status.LastCompletionTime.Reset()
+	instance.Status.LastStartTime = getCurrentTime()
 	if err = r.Client.Update(context.TODO(), instance); err != nil {
 		r.Log.Error(err, "Failed to update status", "Object", instance.Name)
 		return reconcile.Result{}, err
@@ -201,7 +201,7 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return ctrl.Result{Requeue: true}, nil
 	}
 
-	instance.Status.LastCompletionTime = metav1.Now()
+	instance.Status.LastCompletionTime = getCurrentTime()
 	if instance.Spec.ReplicationState == replicationv1alpha1.Resync {
 		err = r.updateReplicationStatus(instance, replicationv1alpha1.Replicating, "volume is marked for resyncing")
 	} else {
@@ -214,7 +214,7 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 func (r *VolumeReplicationReconciler) updateReplicationStatus(instance *replicationv1alpha1.VolumeReplication, state replicationv1alpha1.State, message string) error {
 	instance.Status.State = state
 	instance.Status.Message = message
-	if err := r.Client.Update(context.TODO(), instance); err != nil {
+	if err := r.Client.Status().Update(context.TODO(), instance); err != nil {
 		r.Log.Error(err, "Failed to update status", "Object", instance.Name)
 		return err
 	}
@@ -267,7 +267,7 @@ func (r *VolumeReplicationReconciler) markVolumeAsPrimary(volumeReplicationObjec
 			}
 		}
 		volumeReplicationObject.Status.State = replicationv1alpha1.Replicating
-		err = r.Client.Status().Update(context.TODO(), volumeReplicationObject, nil)
+		err = r.Client.Status().Update(context.TODO(), volumeReplicationObject)
 		if err != nil {
 			return err
 		}
@@ -332,7 +332,7 @@ func (r *VolumeReplicationReconciler) markVolumeAsSecondary(volumeReplicationObj
 		}
 		// set status.state to re-syncing before moving forward
 		volumeReplicationObject.Status.State = replicationv1alpha1.Resyncing
-		err = r.Client.Status().Update(context.TODO(), volumeReplicationObject, nil)
+		err = r.Client.Status().Update(context.TODO(), volumeReplicationObject)
 		if err != nil {
 			return false, err
 		}
@@ -359,7 +359,7 @@ func (r *VolumeReplicationReconciler) resyncVolume(volumeReplicationObject *repl
 
 	if volumeReplicationObject.Status.State != replicationv1alpha1.Resyncing {
 		volumeReplicationObject.Status.State = replicationv1alpha1.Resyncing
-		err = r.Client.Status().Update(context.TODO(), volumeReplicationObject, nil)
+		err = r.Client.Status().Update(context.TODO(), volumeReplicationObject)
 		if err != nil {
 			return false, err
 		}
@@ -389,7 +389,7 @@ func (r *VolumeReplicationReconciler) resyncVolume(volumeReplicationObject *repl
 		}
 	}
 	volumeReplicationObject.Status.State = replicationv1alpha1.Replicating
-	err = r.Client.Status().Update(context.TODO(), volumeReplicationObject, nil)
+	err = r.Client.Status().Update(context.TODO(), volumeReplicationObject)
 	if err != nil {
 		return false, err
 	}
@@ -445,4 +445,9 @@ func (r *VolumeReplicationReconciler) hasKnownGRPCError(tasks []*tasks.TaskSpec,
 		}
 	}
 	return false
+}
+
+func getCurrentTime() *metav1.Time {
+	metav1NowTime := metav1.NewTime(time.Now())
+	return &metav1NowTime
 }
