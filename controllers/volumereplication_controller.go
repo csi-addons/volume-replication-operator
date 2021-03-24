@@ -154,6 +154,7 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		if contains(instance.GetFinalizers(), volumeReplicationFinalizer) {
 			err := r.disableVolumeReplication(volumeHandle, parameters, secret)
 			if err != nil {
+				r.Log.Error(err, "Failed to disable replication", "Name", instance.Name)
 				return ctrl.Result{}, err
 			}
 
@@ -193,6 +194,7 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	}
 
 	if replicationErr != nil {
+		r.Log.Error(replicationErr, "Failed to Replicate", "Name", instance.Name, "ReplicationState", instance.Spec.ReplicationState)
 		_ = r.updateReplicationStatus(instance, replicationv1alpha1.ReplicationFailure, replicationErr.Error())
 		return ctrl.Result{}, replicationErr
 	}
@@ -201,14 +203,22 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return ctrl.Result{Requeue: true}, nil
 	}
 
-	instance.Status.LastCompletionTime = getCurrentTime()
+	var msg string
 	if instance.Spec.ReplicationState == replicationv1alpha1.Resync {
-		err = r.updateReplicationStatus(instance, replicationv1alpha1.Replicating, "volume is marked for resyncing")
+		msg = "volume is marked for resyncing"
 	} else {
-		err = r.updateReplicationStatus(instance, replicationv1alpha1.Replicating, "volume is marked "+string(instance.Spec.ReplicationState))
+		msg = fmt.Sprintf("volume is marked %s", string(instance.Spec.ReplicationState))
 	}
 
-	return ctrl.Result{}, err
+	instance.Status.LastCompletionTime = getCurrentTime()
+	err = r.updateReplicationStatus(instance, replicationv1alpha1.Replicating, msg)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	r.Log.Info(msg, "Name", instance.Name)
+
+	return ctrl.Result{}, nil
 }
 
 func (r *VolumeReplicationReconciler) updateReplicationStatus(instance *replicationv1alpha1.VolumeReplication, state replicationv1alpha1.State, message string) error {
