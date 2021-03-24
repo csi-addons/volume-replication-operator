@@ -36,5 +36,16 @@ func (r *VolumeReplicationReconciler) getSecret(name, namespace string) (map[str
 		r.Log.Error(err, "error getting secret", "Secret Name", name, "Secret Namespace", namespace)
 		return nil, err
 	}
-	return secret.StringData, nil
+	return convertMap(secret.Data), nil
+}
+
+// convertMap converts map[string][]byte to map[string]string
+func convertMap(oldMap map[string][]byte) map[string]string {
+	newMap := make(map[string]string)
+
+	for key, val := range oldMap {
+		newMap[key] = string(val)
+	}
+
+	return newMap
 }
