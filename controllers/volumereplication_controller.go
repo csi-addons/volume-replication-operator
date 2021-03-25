@@ -388,7 +388,7 @@ func (r *VolumeReplicationReconciler) resyncVolume(volumeReplicationObject *repl
 			r.Log.Error(re.Error, "task failed", "taskName", re.Name)
 			return false, re.Error
 		}
-		resyncResponse, ok := re.Response.(replicationlib.ResyncVolumeResponse)
+		resyncResponse, ok := re.Response.(*replicationlib.ResyncVolumeResponse)
 		if !ok {
 			err = fmt.Errorf("received response of unexpected type")
 			r.Log.Error(err, "unable to parse response")
