@@ -134,8 +134,10 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		}
 		volumeHandle = pv.Spec.CSI.VolumeHandle
 	default:
-		_ = r.updateReplicationStatus(instance, replicationv1alpha1.ReplicationFailure, ("unsupported datasource kind " + instance.Spec.DataSource.Kind))
-		return ctrl.Result{}, fmt.Errorf("unsupported datasource kind %q", instance.Spec.DataSource.Kind)
+		err = fmt.Errorf("unsupported datasource kind %q", instance.Spec.DataSource.Kind)
+		r.Log.Error(err, "Name", instance.Name)
+		_ = r.updateReplicationStatus(instance, replicationv1alpha1.ReplicationFailure, err.Error())
+		return ctrl.Result{}, nil
 	}
 
 	r.Log.Info("volume handle", "Name", volumeHandle)
@@ -191,6 +193,9 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 	default:
 		replicationErr = fmt.Errorf("unsupported image state %q", instance.Spec.ReplicationState)
+		r.Log.Error(replicationErr, "unsupported image state", "Name", instance.Name, "ReplicationState", instance.Spec.ReplicationState)
+		_ = r.updateReplicationStatus(instance, replicationv1alpha1.ReplicationFailure, replicationErr.Error())
+		return ctrl.Result{}, nil
 	}
 
 	if replicationErr != nil {
