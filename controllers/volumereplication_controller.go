@@ -30,6 +30,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	replicationlib "github.com/kube-storage/spec/lib/go/replication"
@@ -234,6 +235,9 @@ func (r *VolumeReplicationReconciler) updateReplicationStatus(instance *replicat
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *VolumeReplicationReconciler) SetupWithManager(mgr ctrl.Manager, cfg *config.DriverConfig) error {
+
+	pred := predicate.GenerationChangedPredicate{}
+
 	r.DriverConfig = cfg
 	c, err := grpcClient.New(cfg.DriverEndpoint, cfg.RPCTimeout)
 	if err != nil {
@@ -249,7 +253,7 @@ func (r *VolumeReplicationReconciler) SetupWithManager(mgr ctrl.Manager, cfg *co
 	r.Replication = grpcClient.NewReplicationClient(r.GRPCClient.Client, cfg.RPCTimeout)
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&replicationv1alpha1.VolumeReplication{}).
-		Complete(r)
+		WithEventFilter(pred).Complete(r)
 }
 
 // markVolumeAsPrimary defines and runs a set of tasks required to mark a volume as primary
