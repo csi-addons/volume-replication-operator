@@ -304,7 +304,16 @@ func (r *VolumeReplicationReconciler) markVolumeAsPrimary(volumeReplicationObjec
 	resp := tasks.RunAll(promoteVolumeTasks)
 
 	isKnownError := r.hasKnownGRPCError(promoteVolumeTasks, resp)
-	if isKnownError {
+
+	if !isKnownError {
+		for _, re := range resp {
+			if re.Error != nil {
+				r.Log.Error(re.Error, "task failed", "taskName", re.Name)
+				return re.Error
+			}
+		}
+
+	} else {
 		forcePromoteVolumeTasks := []*tasks.TaskSpec{
 			{
 				Name: forcePromoteVolume,
