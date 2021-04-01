@@ -179,6 +179,13 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return reconcile.Result{}, err
 	}
 
+	// enable replication on every reconcile
+	if err = r.enableReplication(volumeHandle, parameters, secret); err != nil {
+		r.Log.Error(err, "Failed to enable replication", "Object", instance.Name)
+		_ = r.updateReplicationStatus(instance, replicationv1alpha1.ReplicationFailure, err.Error())
+		return reconcile.Result{}, err
+	}
+
 	var replicationErr error
 	var requeueForResync bool
 
@@ -268,28 +275,6 @@ func (r *VolumeReplicationReconciler) markVolumeAsPrimary(volumeReplicationObjec
 		Parameters:  parameters,
 		Secrets:     secrets,
 		Replication: r.Replication,
-	}
-	var err error
-
-	if volumeReplicationObject.Status.State != replicationv1alpha1.Replicating {
-		enableVolumeReplicationTask := []*tasks.TaskSpec{
-			{
-				Name: enableVolumeReplication,
-				Task: replication.NewEnableTask(c),
-			},
-		}
-		resp := tasks.RunAll(enableVolumeReplicationTask)
-		for _, re := range resp {
-			if re.Error != nil {
-				r.Log.Error(re.Error, "task failed", "taskName", re.Name)
-				return re.Error
-			}
-		}
-		volumeReplicationObject.Status.State = replicationv1alpha1.Replicating
-		err = r.Client.Status().Update(context.TODO(), volumeReplicationObject)
-		if err != nil {
-			return err
-		}
 	}
 
 	promoteVolumeTasks := []*tasks.TaskSpec{
@@ -439,6 +424,32 @@ func (r *VolumeReplicationReconciler) disableVolumeReplication(volumeID string, 
 			return re.Error
 		}
 	}
+	return nil
+}
+
+// enableReplication enable volume replication on the first reconcile
+func (r *VolumeReplicationReconciler) enableReplication(volumeID string, parameters, secrets map[string]string) error {
+	c := replication.CommonRequestParameters{
+		VolumeID:    volumeID,
+		Parameters:  parameters,
+		Secrets:     secrets,
+		Replication: r.Replication,
+	}
+
+	enableVolumeReplicationTask := []*tasks.TaskSpec{
+		{
+			Name: enableVolumeReplication,
+			Task: replication.NewEnableTask(c),
+		},
+	}
+	resp := tasks.RunAll(enableVolumeReplicationTask)
+	for _, re := range resp {
+		if re.Error != nil {
+			r.Log.Error(re.Error, "task failed", "taskName", re.Name)
+			return re.Error
+		}
+	}
+
 	return nil
 }
 
