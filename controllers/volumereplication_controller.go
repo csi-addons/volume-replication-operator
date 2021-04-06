@@ -74,7 +74,9 @@ type VolumeReplicationReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.7.0/pkg/reconcile
 func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 
-	_ = r.Log.WithValues("controller_volumereplication", req.NamespacedName)
+	prevLogger := r.Log
+	defer func() { r.Log = prevLogger }()
+	r.Log = r.Log.WithValues("Request.Name", req.Name, "Request.Namespace", req.Namespace)
 
 	// Fetch VolumeReplication instance
 	instance := &replicationv1alpha1.VolumeReplication{}
@@ -84,7 +86,7 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
-			r.Log.Info("no VolumeReplication resource found")
+			r.Log.Info("volumeReplication resource not found")
 			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
@@ -105,7 +107,7 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	err = validatePrefixedParameters(vrcObj.Spec.Parameters)
 	if err != nil {
 		_ = r.updateReplicationStatus(instance, replicationv1alpha1.ReplicationFailure, err.Error())
-		r.Log.Error(err, "failed to validate prefix parameters", "volumeReplicationClass", instance.Spec.VolumeReplicationClass)
+		r.Log.Error(err, "failed to validate parameters of volumeReplicationClass", "VRCName", instance.Spec.VolumeReplicationClass)
 		return ctrl.Result{}, err
 	}
 	// remove the prefix keys in volume replication class parameters
@@ -130,26 +132,26 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		_, pv, err := r.getPVCDataSource(nameSpacedName)
 		if err != nil {
 			_ = r.updateReplicationStatus(instance, replicationv1alpha1.ReplicationFailure, err.Error())
-			r.Log.Error(err, "failed to get dataSource for PVC", "dataSourceName", nameSpacedName.Name)
+			r.Log.Error(err, "failed to get PVC", "PVCName", instance.Spec.DataSource.Name)
 			return ctrl.Result{}, err
 		}
 		volumeHandle = pv.Spec.CSI.VolumeHandle
 	default:
-		err = fmt.Errorf("unsupported datasource kind %q", instance.Spec.DataSource.Kind)
-		r.Log.Error(err, "Name", instance.Name)
+		err = fmt.Errorf("unsupported datasource kind")
+		r.Log.Error(err, "given kind not supported", "Kind", instance.Spec.DataSource.Kind)
 		_ = r.updateReplicationStatus(instance, replicationv1alpha1.ReplicationFailure, err.Error())
 		return ctrl.Result{}, nil
 	}
 
-	r.Log.Info("volume handle", "Name", volumeHandle)
+	r.Log.Info("volume handle", "VolumeHandleName", volumeHandle)
 
 	// check if the object is being deleted
 	if instance.GetDeletionTimestamp().IsZero() {
 		if !contains(instance.GetFinalizers(), volumeReplicationFinalizer) {
-			r.Log.Info("finalizer not found for volumeReplication object. Adding finalizer", "objectName", instance.Name, "finalizer", volumeReplicationFinalizer)
+			r.Log.Info("finalizer not found for volumeReplication object. Adding finalizer", "Finalizer", volumeReplicationFinalizer)
 			instance.ObjectMeta.Finalizers = append(instance.ObjectMeta.Finalizers, volumeReplicationFinalizer)
 			if err := r.Client.Update(context.TODO(), instance); err != nil {
-				r.Log.Error(err, "failed to update volumeReplication object with finalizer", "objectName", instance.Name, "finalizer", volumeReplicationFinalizer)
+				r.Log.Error(err, "failed to update volumeReplication object with finalizer", "Finalizer", volumeReplicationFinalizer)
 				return reconcile.Result{}, err
 			}
 		}
@@ -157,31 +159,31 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		if contains(instance.GetFinalizers(), volumeReplicationFinalizer) {
 			err := r.disableVolumeReplication(volumeHandle, parameters, secret)
 			if err != nil {
-				r.Log.Error(err, "Failed to disable replication", "Name", instance.Name)
+				r.Log.Error(err, "failed to disable replication")
 				return ctrl.Result{}, err
 			}
 
-			r.Log.Info("removing finalizer from volumeReplication object", "objectName", instance.Name, "finalizer", volumeReplicationFinalizer)
+			r.Log.Info("removing finalizer from volumeReplication object", "Finalizer", volumeReplicationFinalizer)
 			// once all finalizers have been removed, the object will be deleted
 			instance.ObjectMeta.Finalizers = remove(instance.ObjectMeta.Finalizers, volumeReplicationFinalizer)
 			if err := r.Client.Update(context.TODO(), instance); err != nil {
-				r.Log.Error(err, "failed to remove finalizer from volumeReplication object", "objectName", instance.Name, "finalizer", volumeReplicationFinalizer)
+				r.Log.Error(err, "failed to remove finalizer from volumeReplication object", "Finalizer", volumeReplicationFinalizer)
 				return reconcile.Result{}, err
 			}
 		}
-		r.Log.Info("volumeReplication object is terminated, skipping reconciliation", "objectName", instance.Name)
+		r.Log.Info("volumeReplication object is terminated, skipping reconciliation")
 		return ctrl.Result{}, nil
 	}
 
 	instance.Status.LastStartTime = getCurrentTime()
 	if err = r.Client.Update(context.TODO(), instance); err != nil {
-		r.Log.Error(err, "Failed to update status", "Object", instance.Name)
+		r.Log.Error(err, "failed to update status")
 		return reconcile.Result{}, err
 	}
 
 	// enable replication on every reconcile
 	if err = r.enableReplication(volumeHandle, parameters, secret); err != nil {
-		r.Log.Error(err, "Failed to enable replication", "Object", instance.Name)
+		r.Log.Error(err, "failed to enable replication")
 		_ = r.updateReplicationStatus(instance, replicationv1alpha1.ReplicationFailure, err.Error())
 		return reconcile.Result{}, err
 	}
@@ -200,19 +202,21 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		requeueForResync, replicationErr = r.resyncVolume(instance, volumeHandle, parameters, secret)
 
 	default:
-		replicationErr = fmt.Errorf("unsupported image state %q", instance.Spec.ReplicationState)
-		r.Log.Error(replicationErr, "unsupported image state", "Name", instance.Name, "ReplicationState", instance.Spec.ReplicationState)
+		replicationErr = fmt.Errorf("unsupported volume state")
+		r.Log.Error(replicationErr, "given volume state is not supported", "ReplicationState", instance.Spec.ReplicationState)
 		_ = r.updateReplicationStatus(instance, replicationv1alpha1.ReplicationFailure, replicationErr.Error())
 		return ctrl.Result{}, nil
 	}
 
 	if replicationErr != nil {
-		r.Log.Error(replicationErr, "Failed to Replicate", "Name", instance.Name, "ReplicationState", instance.Spec.ReplicationState)
+		r.Log.Error(replicationErr, "failed to Replicate", "ReplicationState", instance.Spec.ReplicationState)
 		_ = r.updateReplicationStatus(instance, replicationv1alpha1.ReplicationFailure, replicationErr.Error())
 		return ctrl.Result{}, replicationErr
 	}
 
 	if requeueForResync {
+		r.Log.Info("requeuing for resync")
+		_ = r.updateReplicationStatus(instance, replicationv1alpha1.Replicating, "requeuing for resync")
 		return ctrl.Result{Requeue: true}, nil
 	}
 
@@ -229,7 +233,7 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return ctrl.Result{}, err
 	}
 
-	r.Log.Info(msg, "Name", instance.Name)
+	r.Log.Info(msg)
 
 	return ctrl.Result{}, nil
 }
@@ -238,7 +242,7 @@ func (r *VolumeReplicationReconciler) updateReplicationStatus(instance *replicat
 	instance.Status.State = state
 	instance.Status.Message = message
 	if err := r.Client.Status().Update(context.TODO(), instance); err != nil {
-		r.Log.Error(err, "Failed to update status", "Object", instance.Name)
+		r.Log.Error(err, "failed to update status")
 		return err
 	}
 

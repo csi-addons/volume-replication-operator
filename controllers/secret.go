@@ -31,7 +31,8 @@ func (r *VolumeReplicationReconciler) getSecret(name, namespace string) (map[str
 	err := r.Client.Get(context.TODO(), namespacedName, secret)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			r.Log.Error(err, "Secret not found", "Secret Name", name, "Secret Namespace", namespace)
+			r.Log.Error(err, "secret not found", "Secret Name", name, "Secret Namespace", namespace)
+			return nil, err
 		}
 		r.Log.Error(err, "error getting secret", "Secret Name", name, "Secret Namespace", namespace)
 		return nil, err
