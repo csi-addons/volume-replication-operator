@@ -19,7 +19,7 @@ package controllers
 import (
 	"context"
 
-	replicationv1alpha1 "github.com/kube-storage/volume-replication-operator/api/v1alpha1"
+	replicationv1alpha1 "github.com/csi-addons/volume-replication-operator/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 )

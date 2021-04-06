@@ -20,7 +20,7 @@ import (
 	"context"
 	"time"
 
-	replicationlib "github.com/kube-storage/spec/lib/go/replication"
+	replicationlib "github.com/csi-addons/spec/lib/go/replication"
 	"google.golang.org/grpc"
 )
 

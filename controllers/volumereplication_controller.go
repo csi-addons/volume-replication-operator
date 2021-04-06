@@ -33,12 +33,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	replicationlib "github.com/kube-storage/spec/lib/go/replication"
-	replicationv1alpha1 "github.com/kube-storage/volume-replication-operator/api/v1alpha1"
-	"github.com/kube-storage/volume-replication-operator/controllers/tasks"
-	"github.com/kube-storage/volume-replication-operator/controllers/tasks/replication"
-	grpcClient "github.com/kube-storage/volume-replication-operator/pkg/client"
-	"github.com/kube-storage/volume-replication-operator/pkg/config"
+	replicationlib "github.com/csi-addons/spec/lib/go/replication"
+	replicationv1alpha1 "github.com/csi-addons/volume-replication-operator/api/v1alpha1"
+	"github.com/csi-addons/volume-replication-operator/controllers/tasks"
+	"github.com/csi-addons/volume-replication-operator/controllers/tasks/replication"
+	grpcClient "github.com/csi-addons/volume-replication-operator/pkg/client"
+	"github.com/csi-addons/volume-replication-operator/pkg/config"
 )
 
 const (

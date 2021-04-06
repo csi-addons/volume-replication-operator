@@ -33,9 +33,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	replicationv1alpha1 "github.com/kube-storage/volume-replication-operator/api/v1alpha1"
-	"github.com/kube-storage/volume-replication-operator/controllers"
-	"github.com/kube-storage/volume-replication-operator/pkg/config"
+	replicationv1alpha1 "github.com/csi-addons/volume-replication-operator/api/v1alpha1"
+	"github.com/csi-addons/volume-replication-operator/controllers"
+	"github.com/csi-addons/volume-replication-operator/pkg/config"
 	// +kubebuilder:scaffold:imports
 )
 
