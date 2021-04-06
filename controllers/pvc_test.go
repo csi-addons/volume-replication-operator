@@ -19,8 +19,8 @@ package controllers
 import (
 	"testing"
 
-	replicationv1alpha1 "github.com/kube-storage/volume-replication-operator/api/v1alpha1"
-	"github.com/kube-storage/volume-replication-operator/pkg/config"
+	replicationv1alpha1 "github.com/csi-addons/volume-replication-operator/api/v1alpha1"
+	"github.com/csi-addons/volume-replication-operator/pkg/config"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

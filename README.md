@@ -3,7 +3,7 @@
 ## Overview
 
 Volume Replication Operator is a kubernetes operator that provides common and reusable APIs for storage disaster recovery.
-It is based on [kube-storage/spec](https://github.com/kube-storage/spec) specification and can be used by any storage
+It is based on [csi-addons/spec](https://github.com/csi-addons/spec) specification and can be used by any storage
 provider.
 
 ## Design
@@ -11,7 +11,7 @@ provider.
 Volume Replication Operator follows controller pattern and provides extended APIs for storage disaster recovery.
 The extended APIs are provided via Custom Resource Definition (CRD).
 
-### [VolumeReplicationClass](https://github.com/kube-storage/volume-replication-operator/blob/main/config/crd/bases/replication.storage.openshift.io_volumereplicationclasses.yaml)
+### [VolumeReplicationClass](https://github.com/csi-addons/volume-replication-operator/blob/main/config/crd/bases/replication.storage.openshift.io_volumereplicationclasses.yaml)
 
 `VolumeReplicationClass` is a cluster scoped resource that contains driver related configuration parameters.
 
@@ -37,7 +37,7 @@ spec:
     replication.storage.openshift.io/replication-secret-namespace: secret-namespace
 ```
 
-### [VolumeReplication](https://github.com/kube-storage/volume-replication-operator/blob/main/config/crd/bases/replication.storage.openshift.io_volumereplications.yaml)
+### [VolumeReplication](https://github.com/csi-addons/volume-replication-operator/blob/main/config/crd/bases/replication.storage.openshift.io_volumereplications.yaml)
 
 VolumeReplication is a namespaced resource that contains references to storage object to be replicated and
 VolumeReplicationClass corresponding to the driver providing replication.

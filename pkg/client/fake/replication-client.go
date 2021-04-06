@@ -17,7 +17,7 @@ limitations under the License.
 package fake
 
 import (
-	replicationlib "github.com/kube-storage/spec/lib/go/replication"
+	replicationlib "github.com/csi-addons/spec/lib/go/replication"
 )
 
 // ReplicationClient to fake replication operations.

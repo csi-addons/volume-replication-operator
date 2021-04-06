@@ -17,7 +17,7 @@ limitations under the License.
 package replication
 
 import (
-	"github.com/kube-storage/volume-replication-operator/pkg/client"
+	"github.com/csi-addons/volume-replication-operator/pkg/client"
 )
 
 // CommonRequestParameters holds the common parameters across replication operations.

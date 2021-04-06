@@ -21,11 +21,11 @@ import (
 	"testing"
 	"time"
 
-	replicationlib "github.com/kube-storage/spec/lib/go/replication"
+	replicationlib "github.com/csi-addons/spec/lib/go/replication"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 
-	"github.com/kube-storage/volume-replication-operator/pkg/client/fake"
+	"github.com/csi-addons/volume-replication-operator/pkg/client/fake"
 )
 
 func TestEnableVolumeReplication(t *testing.T) {

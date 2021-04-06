@@ -30,7 +30,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	replicationv1alpha1 "github.com/kube-storage/volume-replication-operator/api/v1alpha1"
+	replicationv1alpha1 "github.com/csi-addons/volume-replication-operator/api/v1alpha1"
 	// +kubebuilder:scaffold:imports
 )
 
