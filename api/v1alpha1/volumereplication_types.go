@@ -39,14 +39,14 @@ const (
 type State string
 
 const (
-	// Replicating means the volume is mirroring or replicating
-	Replicating State = "Replicating"
+	// PrimaryState represents the Primary replication state
+	PrimaryState State = "Primary"
 
-	// ReplicationFailure means the last replication operation failed
-	ReplicationFailure State = "Failed"
+	// SecondaryState represents the Secondary replication state
+	SecondaryState State = "Secondary"
 
-	//Resyncing means that the volume is resyncing
-	Resyncing State = "Resyncing"
+	// UnknownState represents the Unknown replication state
+	UnknownState State = "Unknown"
 )
 
 // VolumeReplicationSpec defines the desired state of VolumeReplication
@@ -67,8 +67,13 @@ type VolumeReplicationSpec struct {
 
 // VolumeReplicationStatus defines the observed state of VolumeReplication
 type VolumeReplicationStatus struct {
-	State              State        `json:"state,omitempty"`
-	Message            string       `json:"message,omitempty"`
+	State   State  `json:"state,omitempty"`
+	Message string `json:"message,omitempty"`
+	// Conditions are the list of conditions and their status.
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
+	// observedGeneration is the last generation change the operator has dealt with
+	// +optional
+	ObservedGeneration int64        `json:"observedGeneration,omitempty"`
 	LastStartTime      *metav1.Time `json:"lastStartTime,omitempty"`
 	LastCompletionTime *metav1.Time `json:"lastCompletionTime,omitempty"`
 }
