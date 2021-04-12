@@ -196,7 +196,11 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		replicationErr = r.markVolumeAsPrimary(instance, volumeHandle, parameters, secret)
 
 	case replicationv1alpha1.Secondary:
-		requeueForResync, replicationErr = r.markVolumeAsSecondary(instance, volumeHandle, parameters, secret)
+		replicationErr = r.markVolumeAsSecondary(instance, volumeHandle, parameters, secret)
+		// resync volume if successfully marked Secondary
+		if replicationErr == nil {
+			requeueForResync, replicationErr = r.resyncVolume(instance, volumeHandle, parameters, secret)
+		}
 
 	case replicationv1alpha1.Resync:
 		requeueForResync, replicationErr = r.resyncVolume(instance, volumeHandle, parameters, secret)
@@ -323,44 +327,29 @@ func (r *VolumeReplicationReconciler) markVolumeAsPrimary(volumeReplicationObjec
 
 // markVolumeAsSecondary defines and runs a set of tasks required to mark a volume as secondary
 func (r *VolumeReplicationReconciler) markVolumeAsSecondary(volumeReplicationObject *replicationv1alpha1.VolumeReplication,
-	volumeID string, parameters, secrets map[string]string) (bool, error) {
+	volumeID string, parameters, secrets map[string]string) error {
 	c := replication.CommonRequestParameters{
 		VolumeID:    volumeID,
 		Parameters:  parameters,
 		Secrets:     secrets,
 		Replication: r.Replication,
 	}
-	var err error
 
-	// if we are not re-syncing, we need to demote volume first
-	if volumeReplicationObject.Status.State != replicationv1alpha1.Resyncing {
-		demoteVolumeTask := []*tasks.TaskSpec{
-			{
-				Name: demoteVolume,
-				Task: replication.NewDemoteVolumeTask(c),
-			},
-		}
-		resp := tasks.RunAll(demoteVolumeTask)
-		for _, re := range resp {
-			if re.Error != nil {
-				r.Log.Error(re.Error, "task failed", "taskName", re.Name)
-				return false, re.Error
-			}
-		}
-		// set status.state to re-syncing before moving forward
-		volumeReplicationObject.Status.State = replicationv1alpha1.Resyncing
-		err = r.Client.Status().Update(context.TODO(), volumeReplicationObject)
-		if err != nil {
-			return false, err
+	demoteVolumeTask := []*tasks.TaskSpec{
+		{
+			Name: demoteVolume,
+			Task: replication.NewDemoteVolumeTask(c),
+		},
+	}
+	resp := tasks.RunAll(demoteVolumeTask)
+	for _, re := range resp {
+		if re.Error != nil {
+			r.Log.Error(re.Error, "task failed", "taskName", re.Name)
+			return re.Error
 		}
 	}
 
-	// if we are re-syncing, we need to check response for Ready and requeue if required
-	if volumeReplicationObject.Status.State == replicationv1alpha1.Resyncing {
-		return r.resyncVolume(volumeReplicationObject, volumeID, parameters, secrets)
-	}
-
-	return false, nil
+	return nil
 }
 
 // resyncVolume defines and runs a set of tasks required to resync the volume
@@ -371,15 +360,6 @@ func (r *VolumeReplicationReconciler) resyncVolume(volumeReplicationObject *repl
 		Parameters:  parameters,
 		Secrets:     secrets,
 		Replication: r.Replication,
-	}
-	var err error
-
-	if volumeReplicationObject.Status.State != replicationv1alpha1.Resyncing {
-		volumeReplicationObject.Status.State = replicationv1alpha1.Resyncing
-		err = r.Client.Status().Update(context.TODO(), volumeReplicationObject)
-		if err != nil {
-			return false, err
-		}
 	}
 
 	var resyncVolumeTasks = []*tasks.TaskSpec{
@@ -397,7 +377,7 @@ func (r *VolumeReplicationReconciler) resyncVolume(volumeReplicationObject *repl
 		}
 		resyncResponse, ok := re.Response.(*replicationlib.ResyncVolumeResponse)
 		if !ok {
-			err = fmt.Errorf("received response of unexpected type")
+			err := fmt.Errorf("received response of unexpected type")
 			r.Log.Error(err, "unable to parse response")
 			return false, err
 		}
@@ -405,11 +385,7 @@ func (r *VolumeReplicationReconciler) resyncVolume(volumeReplicationObject *repl
 			return true, nil
 		}
 	}
-	volumeReplicationObject.Status.State = replicationv1alpha1.Replicating
-	err = r.Client.Status().Update(context.TODO(), volumeReplicationObject)
-	if err != nil {
-		return false, err
-	}
+
 	return false, nil
 }
 
