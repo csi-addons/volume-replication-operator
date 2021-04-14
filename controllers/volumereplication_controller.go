@@ -421,10 +421,19 @@ func (r *VolumeReplicationReconciler) disableVolumeReplication(logger logr.Logge
 		{
 			Name: disableVolumeReplication,
 			Task: replication.NewDisableTask(c),
+			KnownErrors: []codes.Code{
+				codes.NotFound,
+			},
 		},
 	}
 
 	resp := tasks.RunAll(disableVolumeReplicationTasks)
+
+	if isKnownError := r.hasKnownGRPCError(logger, disableVolumeReplicationTasks, resp); isKnownError {
+		logger.Info("volume not found", "volumeID", volumeID)
+		return nil
+	}
+
 	// Check error for all tasks and return error
 	for _, re := range resp {
 		if re.Error != nil {
@@ -457,7 +466,6 @@ func (r *VolumeReplicationReconciler) enableReplication(logger logr.Logger, volu
 			return re.Error
 		}
 	}
-
 	return nil
 }
 
