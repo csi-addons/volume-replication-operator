@@ -160,7 +160,7 @@ func TestGetVolumeHandle(t *testing.T) {
 			Namespace: volumeReplication.Namespace}
 
 		reconciler := createFakeVolumeReplicationReconciler(t, testPV, testPVC, volumeReplication)
-		resultPVC, resultPV, err := reconciler.getPVCDataSource(namespacedName)
+		resultPVC, resultPV, err := reconciler.getPVCDataSource(reconciler.Log, namespacedName)
 		if tc.errorExpected {
 			assert.Error(t, err)
 		} else {
