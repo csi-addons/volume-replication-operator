@@ -205,7 +205,7 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		replicationErr = r.markVolumeAsSecondary(instance, volumeHandle, parameters, secret)
 		// resync volume if successfully marked Secondary
 		if replicationErr == nil {
-			err := r.updateReplicationStatus(instance, getCurrentReplicationState(instance), "volume is marked secondary")
+			err := r.updateReplicationStatus(instance, getReplicationState(instance), "volume is marked secondary")
 			if err != nil {
 				return ctrl.Result{}, err
 			}
