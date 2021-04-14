@@ -19,22 +19,23 @@ package controllers
 import (
 	"context"
 
+	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 )
 
 // getSecret retrives the secrets based on name and namespace input
-func (r *VolumeReplicationReconciler) getSecret(name, namespace string) (map[string]string, error) {
+func (r *VolumeReplicationReconciler) getSecret(logger logr.Logger, name, namespace string) (map[string]string, error) {
 	namespacedName := types.NamespacedName{Name: name, Namespace: namespace}
 	secret := &corev1.Secret{}
 	err := r.Client.Get(context.TODO(), namespacedName, secret)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			r.Log.Error(err, "secret not found", "Secret Name", name, "Secret Namespace", namespace)
+			logger.Error(err, "secret not found", "Secret Name", name, "Secret Namespace", namespace)
 			return nil, err
 		}
-		r.Log.Error(err, "error getting secret", "Secret Name", name, "Secret Namespace", namespace)
+		logger.Error(err, "error getting secret", "Secret Name", name, "Secret Namespace", namespace)
 		return nil, err
 	}
 	return convertMap(secret.Data), nil

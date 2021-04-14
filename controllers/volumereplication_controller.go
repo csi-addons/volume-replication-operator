@@ -74,9 +74,7 @@ type VolumeReplicationReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.7.0/pkg/reconcile
 func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 
-	prevLogger := r.Log
-	defer func() { r.Log = prevLogger }()
-	r.Log = r.Log.WithValues("Request.Name", req.Name, "Request.Namespace", req.Namespace)
+	logger := r.Log.WithValues("Request.Name", req.Name, "Request.Namespace", req.Namespace)
 
 	// Fetch VolumeReplication instance
 	instance := &replicationv1alpha1.VolumeReplication{}
@@ -86,7 +84,7 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
-			r.Log.Info("volumeReplication resource not found")
+			logger.Info("volumeReplication resource not found")
 			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
@@ -94,10 +92,10 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	}
 
 	// Get VolumeReplicationClass
-	vrcObj, err := r.getVolumeReplicaCLass(instance.Spec.VolumeReplicationClass)
+	vrcObj, err := r.getVolumeReplicaCLass(logger, instance.Spec.VolumeReplicationClass)
 	if err != nil {
 		setFailureCondition(instance)
-		_ = r.updateReplicationStatus(instance, getCurrentReplicationState(instance), err.Error())
+		_ = r.updateReplicationStatus(instance, logger, getCurrentReplicationState(instance), err.Error())
 		return ctrl.Result{}, err
 	}
 
@@ -108,8 +106,8 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	err = validatePrefixedParameters(vrcObj.Spec.Parameters)
 	if err != nil {
 		setFailureCondition(instance)
-		_ = r.updateReplicationStatus(instance, getCurrentReplicationState(instance), err.Error())
-		r.Log.Error(err, "failed to validate parameters of volumeReplicationClass", "VRCName", instance.Spec.VolumeReplicationClass)
+		_ = r.updateReplicationStatus(instance, logger, getCurrentReplicationState(instance), err.Error())
+		logger.Error(err, "failed to validate parameters of volumeReplicationClass", "VRCName", instance.Spec.VolumeReplicationClass)
 		return ctrl.Result{}, err
 	}
 	// remove the prefix keys in volume replication class parameters
@@ -120,10 +118,10 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	secretNamespace := vrcObj.Spec.Parameters[prefixedReplicationSecretNamespaceKey]
 	secret := make(map[string]string)
 	if secretName != "" && secretNamespace != "" {
-		secret, err = r.getSecret(secretName, secretNamespace)
+		secret, err = r.getSecret(logger, secretName, secretNamespace)
 		if err != nil {
 			setFailureCondition(instance)
-			_ = r.updateReplicationStatus(instance, getCurrentReplicationState(instance), err.Error())
+			_ = r.updateReplicationStatus(instance, logger, getCurrentReplicationState(instance), err.Error())
 			return reconcile.Result{}, err
 		}
 	}
@@ -132,65 +130,65 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	nameSpacedName := types.NamespacedName{Name: instance.Spec.DataSource.Name, Namespace: req.Namespace}
 	switch instance.Spec.DataSource.Kind {
 	case pvcDataSource:
-		_, pv, err := r.getPVCDataSource(nameSpacedName)
+		_, pv, err := r.getPVCDataSource(logger, nameSpacedName)
 		if err != nil {
 			setFailureCondition(instance)
-			_ = r.updateReplicationStatus(instance, getCurrentReplicationState(instance), err.Error())
-			r.Log.Error(err, "failed to get PVC", "PVCName", instance.Spec.DataSource.Name)
+			_ = r.updateReplicationStatus(instance, logger, getCurrentReplicationState(instance), err.Error())
+			logger.Error(err, "failed to get PVC", "PVCName", instance.Spec.DataSource.Name)
 			return ctrl.Result{}, err
 		}
 		volumeHandle = pv.Spec.CSI.VolumeHandle
 	default:
 		err = fmt.Errorf("unsupported datasource kind")
-		r.Log.Error(err, "given kind not supported", "Kind", instance.Spec.DataSource.Kind)
+		logger.Error(err, "given kind not supported", "Kind", instance.Spec.DataSource.Kind)
 		setFailureCondition(instance)
-		_ = r.updateReplicationStatus(instance, getCurrentReplicationState(instance), err.Error())
+		_ = r.updateReplicationStatus(instance, logger, getCurrentReplicationState(instance), err.Error())
 		return ctrl.Result{}, nil
 	}
 
-	r.Log.Info("volume handle", "VolumeHandleName", volumeHandle)
+	logger.Info("volume handle", "VolumeHandleName", volumeHandle)
 
 	// check if the object is being deleted
 	if instance.GetDeletionTimestamp().IsZero() {
 		if !contains(instance.GetFinalizers(), volumeReplicationFinalizer) {
-			r.Log.Info("finalizer not found for volumeReplication object. Adding finalizer", "Finalizer", volumeReplicationFinalizer)
+			logger.Info("finalizer not found for volumeReplication object. Adding finalizer", "Finalizer", volumeReplicationFinalizer)
 			instance.ObjectMeta.Finalizers = append(instance.ObjectMeta.Finalizers, volumeReplicationFinalizer)
 			if err := r.Client.Update(context.TODO(), instance); err != nil {
-				r.Log.Error(err, "failed to update volumeReplication object with finalizer", "Finalizer", volumeReplicationFinalizer)
+				logger.Error(err, "failed to update volumeReplication object with finalizer", "Finalizer", volumeReplicationFinalizer)
 				return reconcile.Result{}, err
 			}
 		}
 	} else {
 		if contains(instance.GetFinalizers(), volumeReplicationFinalizer) {
-			err := r.disableVolumeReplication(volumeHandle, parameters, secret)
+			err := r.disableVolumeReplication(logger, volumeHandle, parameters, secret)
 			if err != nil {
-				r.Log.Error(err, "failed to disable replication")
+				logger.Error(err, "failed to disable replication")
 				return ctrl.Result{}, err
 			}
 
-			r.Log.Info("removing finalizer from volumeReplication object", "Finalizer", volumeReplicationFinalizer)
+			logger.Info("removing finalizer from volumeReplication object", "Finalizer", volumeReplicationFinalizer)
 			// once all finalizers have been removed, the object will be deleted
 			instance.ObjectMeta.Finalizers = remove(instance.ObjectMeta.Finalizers, volumeReplicationFinalizer)
 			if err := r.Client.Update(context.TODO(), instance); err != nil {
-				r.Log.Error(err, "failed to remove finalizer from volumeReplication object", "Finalizer", volumeReplicationFinalizer)
+				logger.Error(err, "failed to remove finalizer from volumeReplication object", "Finalizer", volumeReplicationFinalizer)
 				return reconcile.Result{}, err
 			}
 		}
-		r.Log.Info("volumeReplication object is terminated, skipping reconciliation")
+		logger.Info("volumeReplication object is terminated, skipping reconciliation")
 		return ctrl.Result{}, nil
 	}
 
 	instance.Status.LastStartTime = getCurrentTime()
 	if err = r.Client.Update(context.TODO(), instance); err != nil {
-		r.Log.Error(err, "failed to update status")
+		logger.Error(err, "failed to update status")
 		return reconcile.Result{}, err
 	}
 
 	// enable replication on every reconcile
-	if err = r.enableReplication(volumeHandle, parameters, secret); err != nil {
-		r.Log.Error(err, "failed to enable replication")
+	if err = r.enableReplication(logger, volumeHandle, parameters, secret); err != nil {
+		logger.Error(err, "failed to enable replication")
 		setFailureCondition(instance)
-		_ = r.updateReplicationStatus(instance, getCurrentReplicationState(instance), err.Error())
+		_ = r.updateReplicationStatus(instance, logger, getCurrentReplicationState(instance), err.Error())
 		return reconcile.Result{}, err
 	}
 
@@ -199,40 +197,40 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 	switch instance.Spec.ReplicationState {
 	case replicationv1alpha1.Primary:
-		replicationErr = r.markVolumeAsPrimary(instance, volumeHandle, parameters, secret)
+		replicationErr = r.markVolumeAsPrimary(instance, logger, volumeHandle, parameters, secret)
 
 	case replicationv1alpha1.Secondary:
-		replicationErr = r.markVolumeAsSecondary(instance, volumeHandle, parameters, secret)
+		replicationErr = r.markVolumeAsSecondary(instance, logger, volumeHandle, parameters, secret)
 		// resync volume if successfully marked Secondary
 		if replicationErr == nil {
-			err := r.updateReplicationStatus(instance, getReplicationState(instance), "volume is marked secondary")
+			err := r.updateReplicationStatus(instance, logger, getReplicationState(instance), "volume is marked secondary")
 			if err != nil {
 				return ctrl.Result{}, err
 			}
-			requeueForResync, replicationErr = r.resyncVolume(instance, volumeHandle, parameters, secret)
+			requeueForResync, replicationErr = r.resyncVolume(instance, logger, volumeHandle, parameters, secret)
 		}
 
 	case replicationv1alpha1.Resync:
-		requeueForResync, replicationErr = r.resyncVolume(instance, volumeHandle, parameters, secret)
+		requeueForResync, replicationErr = r.resyncVolume(instance, logger, volumeHandle, parameters, secret)
 
 	default:
 		replicationErr = fmt.Errorf("unsupported volume state")
-		r.Log.Error(replicationErr, "given volume state is not supported", "ReplicationState", instance.Spec.ReplicationState)
+		logger.Error(replicationErr, "given volume state is not supported", "ReplicationState", instance.Spec.ReplicationState)
 		setFailureCondition(instance)
-		_ = r.updateReplicationStatus(instance, getCurrentReplicationState(instance), replicationErr.Error())
+		_ = r.updateReplicationStatus(instance, logger, getCurrentReplicationState(instance), replicationErr.Error())
 		return ctrl.Result{}, nil
 	}
 
 	if replicationErr != nil {
-		r.Log.Error(replicationErr, "failed to Replicate", "ReplicationState", instance.Spec.ReplicationState)
-		_ = r.updateReplicationStatus(instance, getCurrentReplicationState(instance), replicationErr.Error())
+		logger.Error(replicationErr, "failed to Replicate", "ReplicationState", instance.Spec.ReplicationState)
+		_ = r.updateReplicationStatus(instance, logger, getCurrentReplicationState(instance), replicationErr.Error())
 		return ctrl.Result{}, replicationErr
 	}
 
 	if requeueForResync {
-		r.Log.Info("volume is not ready to use, requeuing for resync")
+		logger.Info("volume is not ready to use, requeuing for resync")
 		setDegradedCondition(&instance.Status.Conditions, instance.Generation)
-		_ = r.updateReplicationStatus(instance, getCurrentReplicationState(instance), "volume is degraded")
+		_ = r.updateReplicationStatus(instance, logger, getCurrentReplicationState(instance), "volume is degraded")
 		return ctrl.Result{Requeue: true}, nil
 	}
 
@@ -244,22 +242,22 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	}
 
 	instance.Status.LastCompletionTime = getCurrentTime()
-	err = r.updateReplicationStatus(instance, getReplicationState(instance), msg)
+	err = r.updateReplicationStatus(instance, logger, getReplicationState(instance), msg)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	r.Log.Info(msg)
+	logger.Info(msg)
 
 	return ctrl.Result{}, nil
 }
 
-func (r *VolumeReplicationReconciler) updateReplicationStatus(instance *replicationv1alpha1.VolumeReplication, state replicationv1alpha1.State, message string) error {
+func (r *VolumeReplicationReconciler) updateReplicationStatus(instance *replicationv1alpha1.VolumeReplication, logger logr.Logger, state replicationv1alpha1.State, message string) error {
 	instance.Status.State = state
 	instance.Status.Message = message
 	instance.Status.ObservedGeneration = instance.Generation
 	if err := r.Client.Status().Update(context.TODO(), instance); err != nil {
-		r.Log.Error(err, "failed to update status")
+		logger.Error(err, "failed to update status")
 		return err
 	}
 
@@ -290,7 +288,7 @@ func (r *VolumeReplicationReconciler) SetupWithManager(mgr ctrl.Manager, cfg *co
 }
 
 // markVolumeAsPrimary defines and runs a set of tasks required to mark a volume as primary
-func (r *VolumeReplicationReconciler) markVolumeAsPrimary(volumeReplicationObject *replicationv1alpha1.VolumeReplication, volumeID string, parameters, secrets map[string]string) error {
+func (r *VolumeReplicationReconciler) markVolumeAsPrimary(volumeReplicationObject *replicationv1alpha1.VolumeReplication, logger logr.Logger, volumeID string, parameters, secrets map[string]string) error {
 	c := replication.CommonRequestParameters{
 		VolumeID:    volumeID,
 		Parameters:  parameters,
@@ -309,12 +307,12 @@ func (r *VolumeReplicationReconciler) markVolumeAsPrimary(volumeReplicationObjec
 	}
 	resp := tasks.RunAll(promoteVolumeTasks)
 
-	isKnownError := r.hasKnownGRPCError(promoteVolumeTasks, resp)
+	isKnownError := r.hasKnownGRPCError(logger, promoteVolumeTasks, resp)
 
 	if !isKnownError {
 		for _, re := range resp {
 			if re.Error != nil {
-				r.Log.Error(re.Error, "task failed", "taskName", re.Name)
+				logger.Error(re.Error, "task failed", "taskName", re.Name)
 				setFailedPromotionCondition(&volumeReplicationObject.Status.Conditions, volumeReplicationObject.Generation)
 				return re.Error
 			}
@@ -330,7 +328,7 @@ func (r *VolumeReplicationReconciler) markVolumeAsPrimary(volumeReplicationObjec
 		resp := tasks.RunAll(forcePromoteVolumeTasks)
 		for _, re := range resp {
 			if re.Error != nil {
-				r.Log.Error(re.Error, "task failed", "taskName", re.Name)
+				logger.Error(re.Error, "task failed", "taskName", re.Name)
 				setFailedPromotionCondition(&volumeReplicationObject.Status.Conditions, volumeReplicationObject.Generation)
 				return re.Error
 			}
@@ -343,7 +341,7 @@ func (r *VolumeReplicationReconciler) markVolumeAsPrimary(volumeReplicationObjec
 
 // markVolumeAsSecondary defines and runs a set of tasks required to mark a volume as secondary
 func (r *VolumeReplicationReconciler) markVolumeAsSecondary(volumeReplicationObject *replicationv1alpha1.VolumeReplication,
-	volumeID string, parameters, secrets map[string]string) error {
+	logger logr.Logger, volumeID string, parameters, secrets map[string]string) error {
 	c := replication.CommonRequestParameters{
 		VolumeID:    volumeID,
 		Parameters:  parameters,
@@ -360,7 +358,7 @@ func (r *VolumeReplicationReconciler) markVolumeAsSecondary(volumeReplicationObj
 	resp := tasks.RunAll(demoteVolumeTask)
 	for _, re := range resp {
 		if re.Error != nil {
-			r.Log.Error(re.Error, "task failed", "taskName", re.Name)
+			logger.Error(re.Error, "task failed", "taskName", re.Name)
 			setFailedDemotionCondition(&volumeReplicationObject.Status.Conditions, volumeReplicationObject.Generation)
 			return re.Error
 		}
@@ -372,7 +370,7 @@ func (r *VolumeReplicationReconciler) markVolumeAsSecondary(volumeReplicationObj
 
 // resyncVolume defines and runs a set of tasks required to resync the volume
 func (r *VolumeReplicationReconciler) resyncVolume(volumeReplicationObject *replicationv1alpha1.VolumeReplication,
-	volumeID string, parameters, secrets map[string]string) (bool, error) {
+	logger logr.Logger, volumeID string, parameters, secrets map[string]string) (bool, error) {
 	c := replication.CommonRequestParameters{
 		VolumeID:    volumeID,
 		Parameters:  parameters,
@@ -390,14 +388,14 @@ func (r *VolumeReplicationReconciler) resyncVolume(volumeReplicationObject *repl
 	resp := tasks.RunAll(resyncVolumeTasks)
 	for _, re := range resp {
 		if re.Error != nil {
-			r.Log.Error(re.Error, "task failed", "taskName", re.Name)
+			logger.Error(re.Error, "task failed", "taskName", re.Name)
 			setFailedResyncCondition(&volumeReplicationObject.Status.Conditions, volumeReplicationObject.Generation)
 			return false, re.Error
 		}
 		resyncResponse, ok := re.Response.(*replicationlib.ResyncVolumeResponse)
 		if !ok {
 			err := fmt.Errorf("received response of unexpected type")
-			r.Log.Error(err, "unable to parse response")
+			logger.Error(err, "unable to parse response")
 			setFailedResyncCondition(&volumeReplicationObject.Status.Conditions, volumeReplicationObject.Generation)
 			return false, err
 		}
@@ -411,7 +409,7 @@ func (r *VolumeReplicationReconciler) resyncVolume(volumeReplicationObject *repl
 }
 
 // disableVolumeReplication defines and runs a set of tasks required to disable volume replication
-func (r *VolumeReplicationReconciler) disableVolumeReplication(volumeID string, parameters, secrets map[string]string) error {
+func (r *VolumeReplicationReconciler) disableVolumeReplication(logger logr.Logger, volumeID string, parameters, secrets map[string]string) error {
 	c := replication.CommonRequestParameters{
 		VolumeID:    volumeID,
 		Parameters:  parameters,
@@ -430,7 +428,7 @@ func (r *VolumeReplicationReconciler) disableVolumeReplication(volumeID string, 
 	// Check error for all tasks and return error
 	for _, re := range resp {
 		if re.Error != nil {
-			r.Log.Error(re.Error, "task failed", "taskName", re.Name)
+			logger.Error(re.Error, "task failed", "taskName", re.Name)
 			return re.Error
 		}
 	}
@@ -438,7 +436,7 @@ func (r *VolumeReplicationReconciler) disableVolumeReplication(volumeID string, 
 }
 
 // enableReplication enable volume replication on the first reconcile
-func (r *VolumeReplicationReconciler) enableReplication(volumeID string, parameters, secrets map[string]string) error {
+func (r *VolumeReplicationReconciler) enableReplication(logger logr.Logger, volumeID string, parameters, secrets map[string]string) error {
 	c := replication.CommonRequestParameters{
 		VolumeID:    volumeID,
 		Parameters:  parameters,
@@ -455,7 +453,7 @@ func (r *VolumeReplicationReconciler) enableReplication(volumeID string, paramet
 	resp := tasks.RunAll(enableVolumeReplicationTask)
 	for _, re := range resp {
 		if re.Error != nil {
-			r.Log.Error(re.Error, "task failed", "taskName", re.Name)
+			logger.Error(re.Error, "task failed", "taskName", re.Name)
 			return re.Error
 		}
 	}
@@ -463,14 +461,14 @@ func (r *VolumeReplicationReconciler) enableReplication(volumeID string, paramet
 	return nil
 }
 
-func (r *VolumeReplicationReconciler) hasKnownGRPCError(tasks []*tasks.TaskSpec, responses []*tasks.TaskResponse) bool {
+func (r *VolumeReplicationReconciler) hasKnownGRPCError(logger logr.Logger, tasks []*tasks.TaskSpec, responses []*tasks.TaskResponse) bool {
 	for _, re := range responses {
 		if re.Error != nil {
 			s, ok := status.FromError(re.Error)
 			if !ok {
 				// This is not gRPC error. The operation must have failed before gRPC
 				// method was called, otherwise we would get gRPC error.
-				r.Log.Error(re.Error, "task failed", "taskName", re.Name)
+				logger.Error(re.Error, "task failed", "taskName", re.Name)
 				return false
 			}
 			for _, task := range tasks {
@@ -480,7 +478,7 @@ func (r *VolumeReplicationReconciler) hasKnownGRPCError(tasks []*tasks.TaskSpec,
 					}
 				}
 			}
-			r.Log.Error(re.Error, "task failed", "taskName", re.Name)
+			logger.Error(re.Error, "task failed", "taskName", re.Name)
 			return false
 		}
 	}

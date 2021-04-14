@@ -20,18 +20,19 @@ import (
 	"context"
 
 	replicationv1alpha1 "github.com/csi-addons/volume-replication-operator/api/v1alpha1"
+	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func (r VolumeReplicationReconciler) getVolumeReplicaCLass(vrcName string) (*replicationv1alpha1.VolumeReplicationClass, error) {
+func (r VolumeReplicationReconciler) getVolumeReplicaCLass(logger logr.Logger, vrcName string) (*replicationv1alpha1.VolumeReplicationClass, error) {
 	vrcObj := &replicationv1alpha1.VolumeReplicationClass{}
 	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: vrcName}, vrcObj)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			r.Log.Error(err, "VolumeReplicationClass not found", "VolumeReplicationClass", vrcName)
+			logger.Error(err, "VolumeReplicationClass not found", "VolumeReplicationClass", vrcName)
 		} else {
-			r.Log.Error(err, "Got an unexpected error while fetching VolumeReplicationClass", "VolumeReplicationClass", vrcName)
+			logger.Error(err, "Got an unexpected error while fetching VolumeReplicationClass", "VolumeReplicationClass", vrcName)
 		}
 		return nil, err
 	}
