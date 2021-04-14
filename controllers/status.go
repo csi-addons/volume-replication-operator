@@ -154,11 +154,17 @@ func setResyncCondition(conditions *[]metav1.Condition, observedGeneration int64
 	})
 }
 
-// sets conditions when volume is not ready to use
+// sets conditions when volume resync is triggered but is not ready to use
 func setDegradedCondition(conditions *[]metav1.Condition, observedGeneration int64) {
 	setStatusCondition(conditions, metav1.Condition{
 		Type:               ConditionDegraded,
 		Reason:             VolumeDegraded,
+		ObservedGeneration: observedGeneration,
+		Status:             metav1.ConditionTrue,
+	})
+	setStatusCondition(conditions, metav1.Condition{
+		Type:               ConditionResyncing,
+		Reason:             ResycTriggered,
 		ObservedGeneration: observedGeneration,
 		Status:             metav1.ConditionTrue,
 	})
