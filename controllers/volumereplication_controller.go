@@ -23,7 +23,6 @@ import (
 
 	"github.com/go-logr/logr"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -35,22 +34,19 @@ import (
 
 	replicationlib "github.com/csi-addons/spec/lib/go/replication"
 	replicationv1alpha1 "github.com/csi-addons/volume-replication-operator/api/v1alpha1"
-	"github.com/csi-addons/volume-replication-operator/controllers/tasks"
-	"github.com/csi-addons/volume-replication-operator/controllers/tasks/replication"
+	"github.com/csi-addons/volume-replication-operator/controllers/replication"
 	grpcClient "github.com/csi-addons/volume-replication-operator/pkg/client"
 	"github.com/csi-addons/volume-replication-operator/pkg/config"
 )
 
 const (
-	pvcDataSource            = "PersistentVolumeClaim"
-	enableVolumeReplication  = "Enable volume replication"
-	disableVolumeReplication = "Disable volume replication"
-	promoteVolume            = "Promote volume"
-	forcePromoteVolume       = "Promote volume (forced)"
-	demoteVolume             = "Demote volume"
-	resyncVolume             = "Resync volume"
-
+	pvcDataSource              = "PersistentVolumeClaim"
 	volumeReplicationFinalizer = "replication.storage.openshift.io"
+)
+
+var (
+	volumePromotionKnownErrors    = []codes.Code{codes.FailedPrecondition}
+	disableReplicationKnownErrors = []codes.Code{codes.NotFound}
 )
 
 // VolumeReplicationReconciler reconciles a VolumeReplication object
@@ -296,41 +292,29 @@ func (r *VolumeReplicationReconciler) markVolumeAsPrimary(volumeReplicationObjec
 		Replication: r.Replication,
 	}
 
-	promoteVolumeTasks := []*tasks.TaskSpec{
-		{
-			Name: promoteVolume,
-			Task: replication.NewPromoteVolumeTask(c, false),
-			KnownErrors: []codes.Code{
-				codes.FailedPrecondition,
-			},
-		},
+	volumeReplication := replication.Replication{
+		Params: c,
 	}
-	resp := tasks.RunAll(promoteVolumeTasks)
 
-	isKnownError := r.hasKnownGRPCError(logger, promoteVolumeTasks, resp)
-
-	if !isKnownError {
-		for _, re := range resp {
-			if re.Error != nil {
-				logger.Error(re.Error, "task failed", "taskName", re.Name)
+	resp := volumeReplication.Promote()
+	if resp.Error != nil {
+		isKnownError := resp.HasKnownGRPCError(volumePromotionKnownErrors)
+		if !isKnownError {
+			if resp.Error != nil {
+				logger.Error(resp.Error, "failed to promote volume")
 				setFailedPromotionCondition(&volumeReplicationObject.Status.Conditions, volumeReplicationObject.Generation)
-				return re.Error
+				return resp.Error
 			}
-		}
 
-	} else {
-		forcePromoteVolumeTasks := []*tasks.TaskSpec{
-			{
-				Name: forcePromoteVolume,
-				Task: replication.NewPromoteVolumeTask(c, true),
-			},
-		}
-		resp := tasks.RunAll(forcePromoteVolumeTasks)
-		for _, re := range resp {
-			if re.Error != nil {
-				logger.Error(re.Error, "task failed", "taskName", re.Name)
+		} else {
+			// force promotion
+			logger.Info("force promoting volume due to known grpc error", "error", resp.Error)
+			volumeReplication.Force = true
+			resp := volumeReplication.Promote()
+			if resp.Error != nil {
+				logger.Error(resp.Error, "failed to force promote volume")
 				setFailedPromotionCondition(&volumeReplicationObject.Status.Conditions, volumeReplicationObject.Generation)
-				return re.Error
+				return resp.Error
 			}
 		}
 	}
@@ -349,19 +333,16 @@ func (r *VolumeReplicationReconciler) markVolumeAsSecondary(volumeReplicationObj
 		Replication: r.Replication,
 	}
 
-	demoteVolumeTask := []*tasks.TaskSpec{
-		{
-			Name: demoteVolume,
-			Task: replication.NewDemoteVolumeTask(c),
-		},
+	volumeReplication := replication.Replication{
+		Params: c,
 	}
-	resp := tasks.RunAll(demoteVolumeTask)
-	for _, re := range resp {
-		if re.Error != nil {
-			logger.Error(re.Error, "task failed", "taskName", re.Name)
-			setFailedDemotionCondition(&volumeReplicationObject.Status.Conditions, volumeReplicationObject.Generation)
-			return re.Error
-		}
+
+	resp := volumeReplication.Demote()
+
+	if resp.Error != nil {
+		logger.Error(resp.Error, "failed to demote volume")
+		setFailedDemotionCondition(&volumeReplicationObject.Status.Conditions, volumeReplicationObject.Generation)
+		return resp.Error
 	}
 
 	setDemotedCondition(&volumeReplicationObject.Status.Conditions, volumeReplicationObject.Generation)
@@ -378,30 +359,26 @@ func (r *VolumeReplicationReconciler) resyncVolume(volumeReplicationObject *repl
 		Replication: r.Replication,
 	}
 
-	var resyncVolumeTasks = []*tasks.TaskSpec{
-		{
-			Name: resyncVolume,
-			Task: replication.NewResyncVolumeTask(c),
-		},
+	volumeReplication := replication.Replication{
+		Params: c,
 	}
 
-	resp := tasks.RunAll(resyncVolumeTasks)
-	for _, re := range resp {
-		if re.Error != nil {
-			logger.Error(re.Error, "task failed", "taskName", re.Name)
-			setFailedResyncCondition(&volumeReplicationObject.Status.Conditions, volumeReplicationObject.Generation)
-			return false, re.Error
-		}
-		resyncResponse, ok := re.Response.(*replicationlib.ResyncVolumeResponse)
-		if !ok {
-			err := fmt.Errorf("received response of unexpected type")
-			logger.Error(err, "unable to parse response")
-			setFailedResyncCondition(&volumeReplicationObject.Status.Conditions, volumeReplicationObject.Generation)
-			return false, err
-		}
-		if !resyncResponse.GetReady() {
-			return true, nil
-		}
+	resp := volumeReplication.Resync()
+
+	if resp.Error != nil {
+		logger.Error(resp.Error, "failed to resync volume")
+		setFailedResyncCondition(&volumeReplicationObject.Status.Conditions, volumeReplicationObject.Generation)
+		return false, resp.Error
+	}
+	resyncResponse, ok := resp.Response.(*replicationlib.ResyncVolumeResponse)
+	if !ok {
+		err := fmt.Errorf("received response of unexpected type")
+		logger.Error(err, "unable to parse response")
+		setFailedResyncCondition(&volumeReplicationObject.Status.Conditions, volumeReplicationObject.Generation)
+		return false, err
+	}
+	if !resyncResponse.GetReady() {
+		return true, nil
 	}
 
 	setResyncCondition(&volumeReplicationObject.Status.Conditions, volumeReplicationObject.Generation)
@@ -417,30 +394,21 @@ func (r *VolumeReplicationReconciler) disableVolumeReplication(logger logr.Logge
 		Replication: r.Replication,
 	}
 
-	var disableVolumeReplicationTasks = []*tasks.TaskSpec{
-		{
-			Name: disableVolumeReplication,
-			Task: replication.NewDisableTask(c),
-			KnownErrors: []codes.Code{
-				codes.NotFound,
-			},
-		},
+	volumeReplication := replication.Replication{
+		Params: c,
 	}
 
-	resp := tasks.RunAll(disableVolumeReplicationTasks)
+	resp := volumeReplication.Disable()
 
-	if isKnownError := r.hasKnownGRPCError(logger, disableVolumeReplicationTasks, resp); isKnownError {
-		logger.Info("volume not found", "volumeID", volumeID)
-		return nil
-	}
-
-	// Check error for all tasks and return error
-	for _, re := range resp {
-		if re.Error != nil {
-			logger.Error(re.Error, "task failed", "taskName", re.Name)
-			return re.Error
+	if resp.Error != nil {
+		if isKnownError := resp.HasKnownGRPCError(disableReplicationKnownErrors); isKnownError {
+			logger.Info("volume not found", "volumeID", volumeID)
+			return nil
 		}
+		logger.Error(resp.Error, "failed to disable volume replication")
+		return resp.Error
 	}
+
 	return nil
 }
 
@@ -453,44 +421,18 @@ func (r *VolumeReplicationReconciler) enableReplication(logger logr.Logger, volu
 		Replication: r.Replication,
 	}
 
-	enableVolumeReplicationTask := []*tasks.TaskSpec{
-		{
-			Name: enableVolumeReplication,
-			Task: replication.NewEnableTask(c),
-		},
+	volumeReplication := replication.Replication{
+		Params: c,
 	}
-	resp := tasks.RunAll(enableVolumeReplicationTask)
-	for _, re := range resp {
-		if re.Error != nil {
-			logger.Error(re.Error, "task failed", "taskName", re.Name)
-			return re.Error
-		}
-	}
-	return nil
-}
 
-func (r *VolumeReplicationReconciler) hasKnownGRPCError(logger logr.Logger, tasks []*tasks.TaskSpec, responses []*tasks.TaskResponse) bool {
-	for _, re := range responses {
-		if re.Error != nil {
-			s, ok := status.FromError(re.Error)
-			if !ok {
-				// This is not gRPC error. The operation must have failed before gRPC
-				// method was called, otherwise we would get gRPC error.
-				logger.Error(re.Error, "task failed", "taskName", re.Name)
-				return false
-			}
-			for _, task := range tasks {
-				for _, e := range task.KnownErrors {
-					if s.Code() == e {
-						return true
-					}
-				}
-			}
-			logger.Error(re.Error, "task failed", "taskName", re.Name)
-			return false
-		}
+	resp := volumeReplication.Enable()
+
+	if resp.Error != nil {
+		logger.Error(resp.Error, "failed to enable volume replication")
+		return resp.Error
 	}
-	return false
+
+	return nil
 }
 
 func getReplicationState(instance *replicationv1alpha1.VolumeReplication) replicationv1alpha1.State {
