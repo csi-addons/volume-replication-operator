@@ -3,7 +3,7 @@ module github.com/csi-addons/volume-replication-operator
 go 1.15
 
 require (
-	github.com/csi-addons/spec v0.0.0-20210302071931-ad3b1446aba1
+	github.com/csi-addons/spec v0.1.0
 	github.com/go-logr/logr v0.3.0
 	github.com/kubernetes-csi/csi-lib-utils v0.9.1
 	github.com/onsi/ginkgo v1.14.1
