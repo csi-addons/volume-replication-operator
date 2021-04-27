@@ -86,6 +86,16 @@ func setFailedPromotionCondition(conditions *[]metav1.Condition, observedGenerat
 	})
 }
 
+// sets conditions when volume is demoted and requeued for resync
+func setOnlyDegradedCondition(conditions *[]metav1.Condition, observedGeneration int64) {
+	setStatusCondition(conditions, metav1.Condition{
+		Type:               ConditionDegraded,
+		Reason:             VolumeDegraded,
+		ObservedGeneration: observedGeneration,
+		Status:             metav1.ConditionTrue,
+	})
+}
+
 // sets conditions when volume was demoted successfully
 func setDemotedCondition(conditions *[]metav1.Condition, observedGeneration int64) {
 	setStatusCondition(conditions, metav1.Condition{

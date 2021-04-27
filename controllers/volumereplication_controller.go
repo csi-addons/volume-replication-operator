@@ -196,14 +196,39 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		replicationErr = r.markVolumeAsPrimary(instance, logger, volumeHandle, parameters, secret)
 
 	case replicationv1alpha1.Secondary:
-		replicationErr = r.markVolumeAsSecondary(instance, logger, volumeHandle, parameters, secret)
-		// resync volume if successfully marked Secondary
-		if replicationErr == nil {
-			err := r.updateReplicationStatus(instance, logger, getReplicationState(instance), "volume is marked secondary")
-			if err != nil {
-				return ctrl.Result{}, err
+		// For the first time, mark the volume as secondary and requeue the
+		// request. For some storage providers it takes some time to determine
+		// whether the volume need correction example:- correcting split brain.
+		if instance.Status.State != replicationv1alpha1.SecondaryState {
+			replicationErr = r.markVolumeAsSecondary(instance, logger, volumeHandle, parameters, secret)
+			if replicationErr == nil {
+				err := r.updateReplicationStatus(instance, logger, getReplicationState(instance), "volume is marked secondary")
+				if err != nil {
+					return ctrl.Result{}, err
+				}
+				logger.Info("volume is not ready to use")
+				setOnlyDegradedCondition(&instance.Status.Conditions, instance.Generation)
+				err = r.updateReplicationStatus(instance, logger, getCurrentReplicationState(instance), "volume is degraded")
+				if err != nil {
+					return ctrl.Result{}, err
+				}
+				return ctrl.Result{
+					Requeue: true,
+					// Setting Requeue time for 15 seconds
+					RequeueAfter: time.Duration(time.Second * 15),
+				}, nil
 			}
-			requeueForResync, replicationErr = r.resyncVolume(instance, logger, volumeHandle, parameters, secret)
+		} else {
+			replicationErr = r.markVolumeAsSecondary(instance, logger, volumeHandle, parameters, secret)
+			// resync volume if successfully marked Secondary
+			if replicationErr == nil {
+				err := r.updateReplicationStatus(instance, logger, getReplicationState(instance), "volume is marked secondary")
+				if err != nil {
+					return ctrl.Result{}, err
+				}
+
+				requeueForResync, replicationErr = r.resyncVolume(instance, logger, volumeHandle, parameters, secret)
+			}
 		}
 
 	case replicationv1alpha1.Resync:
