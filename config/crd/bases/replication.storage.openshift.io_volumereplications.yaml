@@ -60,6 +60,10 @@ spec:
                 description: ReplicationState represents the replication operation
                   to be performed on the volume. Supported operations are "primary",
                   "secondary" and "resync"
+                enum:
+                - primary
+                - secondary
+                - resync
                 type: string
               volumeReplicationClass:
                 description: VolumeReplicationClass is the VolumeReplicationClass
