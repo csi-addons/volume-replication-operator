@@ -81,6 +81,11 @@ type VolumeReplicationStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name=Age,type=date
+// +kubebuilder:printcolumn:JSONPath=".spec.volumeReplicationClass",name=volumeReplicationClass,type=string
+// +kubebuilder:printcolumn:JSONPath=".spec.dataSource.name",name=pvcName,type=string
+// +kubebuilder:printcolumn:JSONPath=".spec.replicationState",name=desiredState,type=string
+// +kubebuilder:printcolumn:JSONPath=".status.state",name=currentState,type=string
 
 // VolumeReplication is the Schema for the volumereplications API
 type VolumeReplication struct {
