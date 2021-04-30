@@ -16,7 +16,23 @@ spec:
     singular: volumereplication
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    - jsonPath: .spec.volumeReplicationClass
+      name: volumeReplicationClass
+      type: string
+    - jsonPath: .spec.dataSource.name
+      name: pvcName
+      type: string
+    - jsonPath: .spec.replicationState
+      name: desiredState
+      type: string
+    - jsonPath: .status.state
+      name: currentState
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: VolumeReplication is the Schema for the volumereplications API
