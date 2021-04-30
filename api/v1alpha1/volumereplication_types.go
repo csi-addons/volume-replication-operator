@@ -22,6 +22,7 @@ import (
 )
 
 // ReplicationState represents the replication operations to be performed on the volume
+// +kubebuilder:validation:Enum=primary;secondary;resync
 type ReplicationState string
 
 const (
