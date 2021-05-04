@@ -29,7 +29,7 @@ type replicationClient struct {
 	timeout time.Duration
 }
 
-// VolumeReplication holds the methods requried for volume replication.
+// VolumeReplication holds the methods required for volume replication.
 type VolumeReplication interface {
 	// EnableVolumeReplication RPC call to enable the volume replication.
 	EnableVolumeReplication(volumeID string, secrets, parameters map[string]string) (*replicationlib.EnableVolumeReplicationResponse, error)
