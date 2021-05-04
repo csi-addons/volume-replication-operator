@@ -36,7 +36,7 @@ func NewDriverConfig() *DriverConfig {
 	return &DriverConfig{}
 }
 
-// Validate operation configrations.
+// Validate operation configurations.
 func (cfg *DriverConfig) Validate() error {
 	// check driver name is set
 	if cfg.DriverName == "" {

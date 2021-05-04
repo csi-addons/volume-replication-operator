@@ -25,7 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-// getSecret retrives the secrets based on name and namespace input
+// getSecret retrieves the secrets based on name and namespace input
 func (r *VolumeReplicationReconciler) getSecret(logger logr.Logger, name, namespace string) (map[string]string, error) {
 	namespacedName := types.NamespacedName{Name: name, Namespace: namespace}
 	secret := &corev1.Secret{}
