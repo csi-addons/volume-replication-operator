@@ -32,6 +32,7 @@ pull_request_rules:
       - base~='^(main)|(release-.+)$'
       - "#approved-reviews-by>=2"
       - "#changes-requested-reviews-by=0"
+      - "status-success=codespell"
       - "status-success=docker-build"
       - "status-success=golangci-lint"
       - "status-success=DCO"
@@ -45,6 +46,7 @@ pull_request_rules:
       - label=ready-to-merge
       - base~='^(main)|(release-.+)$'
       - "#approved-reviews-by>=1"
+      - "status-success=codespell"
       - "status-success=docker-build"
       - "status-success=golangci-lint"
       - "status-success=DCO"
