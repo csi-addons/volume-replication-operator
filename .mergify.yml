@@ -54,3 +54,11 @@ pull_request_rules:
       merge: {}
       dismiss_reviews: {}
       delete_head_branch: {}
+  - name: backport patches to release v0.1 branch
+    conditions:
+      - base=main
+      - label=backport-to-release-v0.1
+    actions:
+      backport:
+        branches:
+          - release-v0.1
