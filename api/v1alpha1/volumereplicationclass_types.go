@@ -39,7 +39,7 @@ type VolumeReplicationClassStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:scope=Cluster
+// +kubebuilder:resource:scope=Cluster,shortName=vrc
 
 // VolumeReplicationClass is the Schema for the volumereplicationclasses API
 type VolumeReplicationClass struct {
