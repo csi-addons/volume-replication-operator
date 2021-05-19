@@ -18,7 +18,11 @@ spec:
     singular: volumereplicationclass
   scope: Cluster
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.provisioner
+      name: provisioner
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: VolumeReplicationClass is the Schema for the volumereplicationclasses
