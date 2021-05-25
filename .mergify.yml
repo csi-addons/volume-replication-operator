@@ -33,8 +33,8 @@ pull_request_rules:
       - "#approved-reviews-by>=2"
       - "#changes-requested-reviews-by=0"
       - "status-success=codespell"
-      - "status-success=docker-build"
-      - "status-success=golangci-lint"
+      - "status-success=test and build"
+      - "status-success=lint"
       - "status-success=DCO"
     actions:
       merge: {}
@@ -47,8 +47,8 @@ pull_request_rules:
       - base~=^(main)|(release-.+)$
       - "#approved-reviews-by>=1"
       - "status-success=codespell"
-      - "status-success=docker-build"
-      - "status-success=golangci-lint"
+      - "status-success=test and build"
+      - "status-success=lint"
       - "status-success=DCO"
     actions:
       merge: {}
