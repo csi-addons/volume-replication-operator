@@ -21,8 +21,8 @@ jobs:
         # working-directory: somedir
 
         # Optional: golangci-lint command line arguments.
-        # TODO: remove --skip-files controllers/suite_test.go once logic is implemented
-        args: -E gosec --timeout=6m --skip-files controllers/suite_test.go
+        # TODO: remove --skip-files controllers/suite_test.go api/v1alpha1/webhook_suite_test.go once logic is implemented
+        args: -E gosec --timeout=6m --skip-files controllers/suite_test.go,api/v1alpha1/webhook_suite_test.go
 
         # Optional: show only new issues if it's a pull request. The default value is `false`.
         # only-new-issues: true
