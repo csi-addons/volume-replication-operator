@@ -17,6 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"fmt"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -32,8 +34,6 @@ func (r *VolumeReplication) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-
 //+kubebuilder:webhook:path=/mutate-replication-storage-openshift-io-v1alpha1-volumereplication,mutating=true,failurePolicy=fail,sideEffects=None,groups=replication.storage.openshift.io,resources=volumereplications,verbs=create;update,versions=v1alpha1,name=mvolumereplication.kb.io,admissionReviewVersions={v1,v1beta1}
 
 var _ webhook.Defaulter = &VolumeReplication{}
@@ -42,10 +42,11 @@ var _ webhook.Defaulter = &VolumeReplication{}
 func (r *VolumeReplication) Default() {
 	volumereplicationlog.Info("default", "name", r.Name)
 
-	// TODO(user): fill in your defaulting logic.
+	if r.Spec.DataSource.Kind == "PersistentVolumeClaim" {
+		r.Spec.DataSource.APIGroup = func(s string) *string { return &s }("core")
+	}
 }
 
-// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
 //+kubebuilder:webhook:path=/validate-replication-storage-openshift-io-v1alpha1-volumereplication,mutating=false,failurePolicy=fail,sideEffects=None,groups=replication.storage.openshift.io,resources=volumereplications,verbs=create;update,versions=v1alpha1,name=vvolumereplication.kb.io,admissionReviewVersions={v1,v1beta1}
 
 var _ webhook.Validator = &VolumeReplication{}
@@ -54,7 +55,12 @@ var _ webhook.Validator = &VolumeReplication{}
 func (r *VolumeReplication) ValidateCreate() error {
 	volumereplicationlog.Info("validate create", "name", r.Name)
 
-	// TODO(user): fill in your validation logic upon object creation.
+	if r.Spec.DataSource.Kind != "PersistentVolumeClaim" {
+		err := fmt.Errorf("Spec.DataSource.Kind can not be %s", r.Spec.DataSource.Kind)
+		volumereplicationlog.Error(err, "Spec.DataSource.Kind needs to be changed")
+		return err
+	}
+
 	return nil
 }
 
@@ -62,7 +68,20 @@ func (r *VolumeReplication) ValidateCreate() error {
 func (r *VolumeReplication) ValidateUpdate(old runtime.Object) error {
 	volumereplicationlog.Info("validate update", "name", r.Name)
 
-	// TODO(user): fill in your validation logic upon object update.
+	oldObj := old.(*VolumeReplication)
+
+	if r.Spec.VolumeReplicationClass != oldObj.Spec.VolumeReplicationClass {
+		err := fmt.Errorf("Spec.VolumeReplicationClass is immutable")
+		volumereplicationlog.Error(err, "Spec.VolumeReplicationClass can not be changed")
+		return err
+	}
+
+	if r.Spec.DataSource.Kind != oldObj.Spec.DataSource.Kind || r.Spec.DataSource.Name != oldObj.Spec.DataSource.Name {
+		err := fmt.Errorf("Spec.DataSource is immutable")
+		volumereplicationlog.Error(err, "Spec.DataSource can not be changed")
+		return err
+	}
+
 	return nil
 }
 
@@ -70,6 +89,5 @@ func (r *VolumeReplication) ValidateUpdate(old runtime.Object) error {
 func (r *VolumeReplication) ValidateDelete() error {
 	volumereplicationlog.Info("validate delete", "name", r.Name)
 
-	// TODO(user): fill in your validation logic upon object deletion.
 	return nil
 }
