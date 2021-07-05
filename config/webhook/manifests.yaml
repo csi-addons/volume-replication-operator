@@ -1,0 +1,100 @@
+
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  creationTimestamp: null
+  name: mutating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-replication-storage-openshift-io-v1alpha1-volumereplication
+  failurePolicy: Fail
+  name: mvolumereplication.kb.io
+  rules:
+  - apiGroups:
+    - replication.storage.openshift.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - volumereplications
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-replication-storage-openshift-io-v1alpha1-volumereplicationclass
+  failurePolicy: Fail
+  name: mvolumereplicationclass.kb.io
+  rules:
+  - apiGroups:
+    - replication.storage.openshift.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - volumereplicationclasses
+  sideEffects: None
+
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  creationTimestamp: null
+  name: validating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-replication-storage-openshift-io-v1alpha1-volumereplication
+  failurePolicy: Fail
+  name: vvolumereplication.kb.io
+  rules:
+  - apiGroups:
+    - replication.storage.openshift.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - volumereplications
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-replication-storage-openshift-io-v1alpha1-volumereplicationclass
+  failurePolicy: Fail
+  name: vvolumereplicationclass.kb.io
+  rules:
+  - apiGroups:
+    - replication.storage.openshift.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - volumereplicationclasses
+  sideEffects: None
