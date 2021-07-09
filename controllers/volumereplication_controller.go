@@ -23,6 +23,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"google.golang.org/grpc/codes"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -69,6 +70,11 @@ type VolumeReplicationReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.7.0/pkg/reconcile
 func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+
+	var (
+		pv    = &corev1.PersistentVolume{}
+		pvErr error
+	)
 
 	logger := r.Log.WithValues("Request.Name", req.Name, "Request.Namespace", req.Namespace)
 
@@ -126,14 +132,19 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	nameSpacedName := types.NamespacedName{Name: instance.Spec.DataSource.Name, Namespace: req.Namespace}
 	switch instance.Spec.DataSource.Kind {
 	case pvcDataSource:
-		_, pv, err := r.getPVCDataSource(logger, nameSpacedName)
-		if err != nil {
-			setFailureCondition(instance)
-			_ = r.updateReplicationStatus(instance, logger, getCurrentReplicationState(instance), err.Error())
-			logger.Error(err, "failed to get PVC", "PVCName", instance.Spec.DataSource.Name)
-			return ctrl.Result{}, err
+		_, pv, pvErr = r.getPVCDataSource(logger, nameSpacedName)
+		if pvErr != nil {
+			// object is not marked for deletion and not able to retrieve PV
+			if instance.GetDeletionTimestamp().IsZero() || !errors.IsNotFound(pvErr) {
+				setFailureCondition(instance)
+				_ = r.updateReplicationStatus(instance, logger, getCurrentReplicationState(instance), pvErr.Error())
+				logger.Error(pvErr, "failed to get PVC", "PVCName", instance.Spec.DataSource.Name)
+				return ctrl.Result{}, pvErr
+			}
 		}
-		volumeHandle = pv.Spec.CSI.VolumeHandle
+		if pv != nil {
+			volumeHandle = pv.Spec.CSI.VolumeHandle
+		}
 	default:
 		err = fmt.Errorf("unsupported datasource kind")
 		logger.Error(err, "given kind not supported", "Kind", instance.Spec.DataSource.Kind)
@@ -156,8 +167,9 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		}
 	} else {
 		if contains(instance.GetFinalizers(), volumeReplicationFinalizer) {
-			// Disable replication only if it is in primary state
-			if instance.Spec.ReplicationState == replicationv1alpha1.Primary {
+			// Disable replication only if it is in primary state and PV object
+			// is present.
+			if instance.Spec.ReplicationState == replicationv1alpha1.Primary && pvErr == nil {
 				err := r.disableVolumeReplication(logger, volumeHandle, parameters, secret)
 				if err != nil {
 					logger.Error(err, "failed to disable replication")
