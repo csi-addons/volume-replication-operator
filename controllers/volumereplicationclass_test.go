@@ -35,7 +35,7 @@ var mockVolumeReplicationClassObj = &replicationv1alpha1.VolumeReplicationClass{
 	},
 }
 
-func TestGetVolumeReplicaCLass(t *testing.T) {
+func TestGetVolumeReplicaClass(t *testing.T) {
 	testcases := []struct {
 		createVrc       bool
 		errorExpected   bool
@@ -60,7 +60,7 @@ func TestGetVolumeReplicaCLass(t *testing.T) {
 		}
 
 		reconciler := createFakeVolumeReplicationReconciler(t, objects...)
-		vrcObj, err := reconciler.getVolumeReplicaCLass(reconciler.Log, mockVolumeReplicationClassObj.Name)
+		vrcObj, err := reconciler.getVolumeReplicaClass(reconciler.Log, mockVolumeReplicationClassObj.Name)
 
 		if tc.errorExpected {
 			assert.Error(t, err)
