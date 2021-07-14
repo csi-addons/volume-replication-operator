@@ -8,6 +8,7 @@ jobs:
   push:
     name: Push Image
     runs-on: ubuntu-latest
+    if: github.repository == 'csi-addons/volume-replication-operator'
     strategy:
       fail-fast: false
       matrix:
