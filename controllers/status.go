@@ -37,7 +37,7 @@ const (
 	Error           = "Error"
 	VolumeDegraded  = "VolumeDegraded"
 	Healthy         = "Healthy"
-	ResycTriggered  = "ResyncTriggered"
+	ResyncTriggered = "ResyncTriggered"
 	FailedToResync  = "FailedToResync"
 	NotResyncing    = "NotResyncing"
 )
@@ -158,7 +158,7 @@ func setResyncCondition(conditions *[]metav1.Condition, observedGeneration int64
 	})
 	setStatusCondition(conditions, metav1.Condition{
 		Type:               ConditionResyncing,
-		Reason:             ResycTriggered,
+		Reason:             ResyncTriggered,
 		ObservedGeneration: observedGeneration,
 		Status:             metav1.ConditionTrue,
 	})
@@ -174,7 +174,7 @@ func setDegradedCondition(conditions *[]metav1.Condition, observedGeneration int
 	})
 	setStatusCondition(conditions, metav1.Condition{
 		Type:               ConditionResyncing,
-		Reason:             ResycTriggered,
+		Reason:             ResyncTriggered,
 		ObservedGeneration: observedGeneration,
 		Status:             metav1.ConditionTrue,
 	})
