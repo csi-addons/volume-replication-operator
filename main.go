@@ -45,8 +45,9 @@ const (
 )
 
 var (
-	scheme   = runtime.NewScheme()
-	setupLog = ctrl.Log.WithName("setup")
+	scheme          = runtime.NewScheme()
+	setupLog        = ctrl.Log.WithName("setup")
+	developmentMode bool
 )
 
 func init() {
@@ -61,6 +62,10 @@ func main() {
 	var leaderElectionNamespace string
 	var enableLeaderElection bool
 	var probeAddr string
+
+	if strings.EqualFold(os.Getenv("DEVELOPMENT_MODE"), "true") {
+		developmentMode = true
+	}
 
 	cfg := config.NewDriverConfig()
 
