@@ -20,12 +20,14 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
+	uberzap "go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -62,6 +64,7 @@ func main() {
 	var leaderElectionNamespace string
 	var enableLeaderElection bool
 	var probeAddr string
+	var opts zap.Options
 
 	if strings.EqualFold(os.Getenv("DEVELOPMENT_MODE"), "true") {
 		developmentMode = true
@@ -78,9 +81,22 @@ func main() {
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	opts := zap.Options{
-		Development: true,
+
+	opts = zap.Options{
+		ZapOpts: []uberzap.Option{
+			uberzap.AddCaller(),
+			uberzap.AddStacktrace(uberzap.PanicLevel),
+		},
 	}
+
+	if developmentMode {
+		opts.Development = true
+		opts.ZapOpts = []uberzap.Option{
+			uberzap.AddCaller(),
+			uberzap.AddStacktrace(uberzap.WarnLevel),
+		}
+	}
+
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
 
