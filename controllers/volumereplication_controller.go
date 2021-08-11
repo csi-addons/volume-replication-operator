@@ -69,12 +69,6 @@ type VolumeReplicationReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.7.0/pkg/reconcile
 func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-
-	var (
-		pv    = &corev1.PersistentVolume{}
-		pvErr error
-	)
-
 	logger := r.Log.WithValues("Request.Name", req.Name, "Request.Namespace", req.Namespace)
 
 	// Fetch VolumeReplication instance
@@ -127,23 +121,28 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		}
 	}
 
-	var volumeHandle string
+	var (
+		volumeHandle string
+		pvc          *corev1.PersistentVolumeClaim
+		pv           *corev1.PersistentVolume
+		pvErr        error
+	)
+
 	nameSpacedName := types.NamespacedName{Name: instance.Spec.DataSource.Name, Namespace: req.Namespace}
 	switch instance.Spec.DataSource.Kind {
 	case pvcDataSource:
-		_, pv, pvErr = r.getPVCDataSource(logger, nameSpacedName)
+		pvc, pv, pvErr = r.getPVCDataSource(logger, nameSpacedName)
 		if pvErr != nil {
 			// object is not marked for deletion and not able to retrieve PV
-			if instance.GetDeletionTimestamp().IsZero() || !errors.IsNotFound(pvErr) {
+			if instance.GetDeletionTimestamp().IsZero() {
 				setFailureCondition(instance)
 				_ = r.updateReplicationStatus(instance, logger, getCurrentReplicationState(instance), pvErr.Error())
 				logger.Error(pvErr, "failed to get PVC", "PVCName", instance.Spec.DataSource.Name)
 				return ctrl.Result{}, pvErr
 			}
 		}
-		if pv != nil {
-			volumeHandle = pv.Spec.CSI.VolumeHandle
-		}
+
+		volumeHandle = pv.Spec.CSI.VolumeHandle
 	default:
 		err = fmt.Errorf("unsupported datasource kind")
 		logger.Error(err, "given kind not supported", "Kind", instance.Spec.DataSource.Kind)
@@ -160,7 +159,10 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 			logger.Error(err, "Failed to add VolumeReplication finalizer")
 			return reconcile.Result{}, err
 		}
-
+		if err := r.addFinalizerToPVC(logger, pvc); err != nil {
+			logger.Error(err, "Failed to add PersistentVolumeClaim finalizer")
+			return reconcile.Result{}, err
+		}
 	} else {
 		if contains(instance.GetFinalizers(), volumeReplicationFinalizer) {
 			err := r.disableVolumeReplication(logger, volumeHandle, parameters, secret)
@@ -168,6 +170,11 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 				logger.Error(err, "failed to disable replication")
 				return ctrl.Result{}, err
 			}
+			if err := r.removeFinalizerFromPVC(logger, pvc); err != nil {
+				logger.Error(err, "Failed to remove PersistentVolumeClaim finalizer")
+				return reconcile.Result{}, err
+			}
+
 			// once all finalizers have been removed, the object will be
 			// deleted
 			if err := r.removeFinalizerFromVR(logger, instance); err != nil {

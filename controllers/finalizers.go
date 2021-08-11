@@ -23,10 +23,12 @@ import (
 	replicationv1alpha1 "github.com/csi-addons/volume-replication-operator/api/v1alpha1"
 
 	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
 )
 
 const (
 	volumeReplicationFinalizer = "replication.storage.openshift.io"
+	pvcReplicationFinalizer    = "replication.storage.openshift.io/pvc-protection"
 )
 
 // addFinalizerToVR adds the VR finalizer on the VolumeReplication instance.
@@ -54,6 +56,37 @@ func (r *VolumeReplicationReconciler) removeFinalizerFromVR(logger logr.Logger, 
 			return fmt.Errorf("failed to remove finalizer (%s) from VolumeReplication resource"+
 				" (%s/%s), %w",
 				volumeReplicationFinalizer, vr.Namespace, vr.Name, err)
+		}
+	}
+
+	return nil
+}
+
+// addFinalizerToPVC adds the VR finalizer on the PersistentVolumeClaim.
+func (r *VolumeReplicationReconciler) addFinalizerToPVC(logger logr.Logger, pvc *corev1.PersistentVolumeClaim) error {
+	if !contains(pvc.ObjectMeta.Finalizers, pvcReplicationFinalizer) {
+		logger.Info("adding finalizer to PersistentVolumeClaim object", "Finalizer", pvcReplicationFinalizer)
+		pvc.ObjectMeta.Finalizers = append(pvc.ObjectMeta.Finalizers, pvcReplicationFinalizer)
+		if err := r.Client.Update(context.TODO(), pvc); err != nil {
+			return fmt.Errorf("failed to add finalizer (%s) to PersistentVolumeClaim resource"+
+				" (%s/%s) %w",
+				pvcReplicationFinalizer, pvc.Namespace, pvc.Name, err)
+		}
+	}
+
+	return nil
+}
+
+// removeFinalizerFromPVC removes the VR finalizer on PersistentVolumeClaim.
+func (r *VolumeReplicationReconciler) removeFinalizerFromPVC(logger logr.Logger, pvc *corev1.PersistentVolumeClaim,
+) error {
+	if contains(pvc.ObjectMeta.Finalizers, pvcReplicationFinalizer) {
+		logger.Info("removing finalizer from PersistentVolumeClaim object", "Finalizer", pvcReplicationFinalizer)
+		pvc.ObjectMeta.Finalizers = remove(pvc.ObjectMeta.Finalizers, pvcReplicationFinalizer)
+		if err := r.Client.Update(context.TODO(), pvc); err != nil {
+			return fmt.Errorf("failed to remove finalizer (%s) from PersistentVolumeClaim resource"+
+				" (%s/%s), %w",
+				pvcReplicationFinalizer, pvc.Namespace, pvc.Name, err)
 		}
 	}
 
