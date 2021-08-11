@@ -167,15 +167,12 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		}
 	} else {
 		if contains(instance.GetFinalizers(), volumeReplicationFinalizer) {
-			// Disable replication only if it is in primary state and PV object
-			// is present.
-			if instance.Spec.ReplicationState == replicationv1alpha1.Primary && pvErr == nil {
-				err := r.disableVolumeReplication(logger, volumeHandle, parameters, secret)
-				if err != nil {
-					logger.Error(err, "failed to disable replication")
-					return ctrl.Result{}, err
-				}
+			err := r.disableVolumeReplication(logger, volumeHandle, parameters, secret)
+			if err != nil {
+				logger.Error(err, "failed to disable replication")
+				return ctrl.Result{}, err
 			}
+
 			logger.Info("removing finalizer from volumeReplication object", "Finalizer", volumeReplicationFinalizer)
 			// once all finalizers have been removed, the object will be deleted
 			instance.ObjectMeta.Finalizers = remove(instance.ObjectMeta.Finalizers, volumeReplicationFinalizer)
