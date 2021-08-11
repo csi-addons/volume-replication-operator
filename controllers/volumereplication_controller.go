@@ -41,8 +41,7 @@ import (
 )
 
 const (
-	pvcDataSource              = "PersistentVolumeClaim"
-	volumeReplicationFinalizer = "replication.storage.openshift.io"
+	pvcDataSource = "PersistentVolumeClaim"
 )
 
 var (
@@ -157,14 +156,11 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 	// check if the object is being deleted
 	if instance.GetDeletionTimestamp().IsZero() {
-		if !contains(instance.GetFinalizers(), volumeReplicationFinalizer) {
-			logger.Info("finalizer not found for volumeReplication object. Adding finalizer", "Finalizer", volumeReplicationFinalizer)
-			instance.ObjectMeta.Finalizers = append(instance.ObjectMeta.Finalizers, volumeReplicationFinalizer)
-			if err := r.Client.Update(context.TODO(), instance); err != nil {
-				logger.Error(err, "failed to update volumeReplication object with finalizer", "Finalizer", volumeReplicationFinalizer)
-				return reconcile.Result{}, err
-			}
+		if err := r.addFinalizerToVR(logger, instance); err != nil {
+			logger.Error(err, "Failed to add VolumeReplication finalizer")
+			return reconcile.Result{}, err
 		}
+
 	} else {
 		if contains(instance.GetFinalizers(), volumeReplicationFinalizer) {
 			err := r.disableVolumeReplication(logger, volumeHandle, parameters, secret)
@@ -172,12 +168,10 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 				logger.Error(err, "failed to disable replication")
 				return ctrl.Result{}, err
 			}
-
-			logger.Info("removing finalizer from volumeReplication object", "Finalizer", volumeReplicationFinalizer)
-			// once all finalizers have been removed, the object will be deleted
-			instance.ObjectMeta.Finalizers = remove(instance.ObjectMeta.Finalizers, volumeReplicationFinalizer)
-			if err := r.Client.Update(context.TODO(), instance); err != nil {
-				logger.Error(err, "failed to remove finalizer from volumeReplication object", "Finalizer", volumeReplicationFinalizer)
+			// once all finalizers have been removed, the object will be
+			// deleted
+			if err := r.removeFinalizerFromVR(logger, instance); err != nil {
+				logger.Error(err, "Failed to remove VolumeReplication finalizer")
 				return reconcile.Result{}, err
 			}
 		}
