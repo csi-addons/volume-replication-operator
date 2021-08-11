@@ -133,13 +133,10 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	case pvcDataSource:
 		pvc, pv, pvErr = r.getPVCDataSource(logger, nameSpacedName)
 		if pvErr != nil {
-			// object is not marked for deletion and not able to retrieve PV
-			if instance.GetDeletionTimestamp().IsZero() {
-				setFailureCondition(instance)
-				_ = r.updateReplicationStatus(instance, logger, getCurrentReplicationState(instance), pvErr.Error())
-				logger.Error(pvErr, "failed to get PVC", "PVCName", instance.Spec.DataSource.Name)
-				return ctrl.Result{}, pvErr
-			}
+			setFailureCondition(instance)
+			_ = r.updateReplicationStatus(instance, logger, getCurrentReplicationState(instance), pvErr.Error())
+			logger.Error(pvErr, "failed to get PVC", "PVCName", instance.Spec.DataSource.Name)
+			return ctrl.Result{}, pvErr
 		}
 
 		volumeHandle = pv.Spec.CSI.VolumeHandle
