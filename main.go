@@ -28,6 +28,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	uberzap "go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -82,20 +83,26 @@ func main() {
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
 
+	lvl := uberzap.NewAtomicLevelAt(uberzap.PanicLevel)
+
 	opts = zap.Options{
 		ZapOpts: []uberzap.Option{
 			uberzap.AddCaller(),
-			uberzap.AddStacktrace(uberzap.PanicLevel),
 		},
 	}
 
+	// configure the timestamp for logging
+	enConfig := uberzap.NewProductionEncoderConfig()
+	enConfig.TimeKey = "timestamp"
+	enConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	opts.Encoder = zapcore.NewJSONEncoder(enConfig)
+
 	if developmentMode {
-		opts.Development = true
-		opts.ZapOpts = []uberzap.Option{
-			uberzap.AddCaller(),
-			uberzap.AddStacktrace(uberzap.WarnLevel),
-		}
+		opts.ZapOpts = append(opts.ZapOpts, uberzap.Development())
+		lvl = uberzap.NewAtomicLevelAt(uberzap.WarnLevel)
 	}
+
+	opts.StacktraceLevel = &lvl
 
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
