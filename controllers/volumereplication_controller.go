@@ -25,8 +25,11 @@ import (
 	"google.golang.org/grpc/codes"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -42,6 +45,8 @@ import (
 
 const (
 	pvcDataSource = "PersistentVolumeClaim"
+	volumeReplicationClass = "VolumeReplicationClass"
+	volumeReplication = "VolumeReplication"
 )
 
 var (
@@ -297,6 +302,12 @@ func (r *VolumeReplicationReconciler) updateReplicationStatus(instance *replicat
 // SetupWithManager sets up the controller with the Manager.
 func (r *VolumeReplicationReconciler) SetupWithManager(mgr ctrl.Manager, cfg *config.DriverConfig) error {
 
+	err := r.waitForCrds()
+	if err != nil {
+		r.Log.Error(err, "failed to wait for crds")
+		return err
+	}
+
 	pred := predicate.GenerationChangedPredicate{}
 
 	r.DriverConfig = cfg
@@ -315,6 +326,48 @@ func (r *VolumeReplicationReconciler) SetupWithManager(mgr ctrl.Manager, cfg *co
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&replicationv1alpha1.VolumeReplication{}).
 		WithEventFilter(pred).Complete(r)
+}
+
+func (r *VolumeReplicationReconciler) waitForCrds() error {
+	logger := r.Log.WithName("checkingDependencies")
+
+	err := r.waitForVolumeReplicationResource(logger, volumeReplicationClass)
+	if err != nil {
+		logger.Error(err, "failed to wait for VolumeReplicationClass CRD")
+		return err
+	}
+
+	err = r.waitForVolumeReplicationResource(logger, volumeReplication)
+	if err != nil {
+		logger.Error(err, "failed to wait for VolumeReplication CRD")
+		return err
+	}
+	return nil
+}
+
+func (r *VolumeReplicationReconciler) waitForVolumeReplicationResource(logger logr.Logger, resourceName string) error {
+	isResourceExists := false
+	unstructuredResource := &unstructured.UnstructuredList{}
+	unstructuredResource.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   replicationv1alpha1.GroupVersion.Group,
+		Kind:    resourceName,
+		Version: replicationv1alpha1.GroupVersion.Version,
+	})
+	for !isResourceExists {
+		err := r.Client.List(context.TODO(), unstructuredResource)
+		if err != nil {
+			if meta.IsNoMatchError(err){
+				logger.Info("resource does not exist", "Resource",  resourceName)
+				time.Sleep(5 * time.Second)
+			} else {
+				logger.Error(err, "got an unexpected error while waiting for resource", "Resource", resourceName)
+				return err
+			}
+		} else {
+			isResourceExists = true
+		}
+	}
+	return nil
 }
 
 // markVolumeAsPrimary defines and runs a set of tasks required to mark a volume as primary
