@@ -64,6 +64,10 @@ type VolumeReplicationSpec struct {
 	// DataSource represents the object associated with the volume
 	// +kubebuilder:validation:Required
 	DataSource corev1.TypedLocalObjectReference `json:"dataSource"`
+	
+	// TargetVolumeHandle represents an existing (but new) target volume id
+	// +kubebuilder:validation:Optional
+	TargetVolumeHandle string `json:"targetVolumeHandle"`
 }
 
 // VolumeReplicationStatus defines the observed state of VolumeReplication

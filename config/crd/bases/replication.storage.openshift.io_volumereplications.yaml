@@ -83,6 +83,10 @@ spec:
                 - secondary
                 - resync
                 type: string
+              targetVolumeHandle:
+                description: TargetVolumeHandle represents an existing (but new) target
+                  volume id
+                type: string
               volumeReplicationClass:
                 description: VolumeReplicationClass is the VolumeReplicationClass
                   name for this VolumeReplication resource
