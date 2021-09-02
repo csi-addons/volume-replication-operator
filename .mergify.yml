@@ -33,7 +33,7 @@ pull_request_rules:
       - "#approved-reviews-by>=2"
       - "#changes-requested-reviews-by=0"
       - "status-success=codespell"
-      - "status-success=test and build (1.15)"
+      - "status-success=test and build (1.16)"
       - "status-success=lint"
       - "status-success=DCO"
     actions:
@@ -47,7 +47,7 @@ pull_request_rules:
       - base~=^(main)|(release-.+)$
       - "#approved-reviews-by>=1"
       - "status-success=codespell"
-      - "status-success=test and build (1.15)"
+      - "status-success=test and build (1.16)"
       - "status-success=lint"
       - "status-success=DCO"
     actions:
