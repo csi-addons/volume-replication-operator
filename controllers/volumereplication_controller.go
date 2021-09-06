@@ -44,9 +44,9 @@ import (
 )
 
 const (
-	pvcDataSource = "PersistentVolumeClaim"
+	pvcDataSource          = "PersistentVolumeClaim"
 	volumeReplicationClass = "VolumeReplicationClass"
-	volumeReplication = "VolumeReplication"
+	volumeReplication      = "VolumeReplication"
 )
 
 var (
@@ -346,28 +346,25 @@ func (r *VolumeReplicationReconciler) waitForCrds() error {
 }
 
 func (r *VolumeReplicationReconciler) waitForVolumeReplicationResource(logger logr.Logger, resourceName string) error {
-	isResourceExists := false
 	unstructuredResource := &unstructured.UnstructuredList{}
 	unstructuredResource.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   replicationv1alpha1.GroupVersion.Group,
 		Kind:    resourceName,
 		Version: replicationv1alpha1.GroupVersion.Version,
 	})
-	for !isResourceExists {
+	for {
 		err := r.Client.List(context.TODO(), unstructuredResource)
-		if err != nil {
-			if meta.IsNoMatchError(err){
-				logger.Info("resource does not exist", "Resource",  resourceName)
-				time.Sleep(5 * time.Second)
-			} else {
-				logger.Error(err, "got an unexpected error while waiting for resource", "Resource", resourceName)
-				return err
-			}
-		} else {
-			isResourceExists = true
+		if err == nil {
+			return nil
 		}
+		// return errors other than NoMatch
+		if !meta.IsNoMatchError(err) {
+			logger.Error(err, "got an unexpected error while waiting for resource", "Resource", resourceName)
+			return err
+		}
+		logger.Info("resource does not exist", "Resource", resourceName)
+		time.Sleep(5 * time.Second)
 	}
-	return nil
 }
 
 // markVolumeAsPrimary defines and runs a set of tasks required to mark a volume as primary
