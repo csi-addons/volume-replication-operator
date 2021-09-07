@@ -267,6 +267,12 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		setDegradedCondition(&instance.Status.Conditions, instance.Generation)
 		_ = r.updateReplicationStatus(instance, logger, getCurrentReplicationState(instance), "volume is degraded")
 		return ctrl.Result{Requeue: true}, nil
+	} else {
+		if instance.Spec.ReplicationState == replicationv1alpha1.Resync {
+			setVolumeReadyCondition(&instance.Status.Conditions, Resync, instance.Generation)
+		} else if instance.Spec.ReplicationState == replicationv1alpha1.Secondary {
+			setVolumeReadyCondition(&instance.Status.Conditions, Demoted, instance.Generation)
+		}
 	}
 
 	var msg string

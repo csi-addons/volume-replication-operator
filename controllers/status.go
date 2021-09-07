@@ -32,6 +32,7 @@ const (
 	Success         = "Success"
 	Promoted        = "Promoted"
 	Demoted         = "Demoted"
+	Resync          = "Resync"
 	FailedToPromote = "FailedToPromote"
 	FailedToDemote  = "FailedToDemote"
 	Error           = "Error"
@@ -177,6 +178,28 @@ func setDegradedCondition(conditions *[]metav1.Condition, observedGeneration int
 		Reason:             ResyncTriggered,
 		ObservedGeneration: observedGeneration,
 		Status:             metav1.ConditionTrue,
+	})
+}
+
+// sets conditions when volume resync is completed and volume is ready to use
+func setVolumeReadyCondition(conditions *[]metav1.Condition, conditionReason string, observedGeneration int64) {
+	setStatusCondition(conditions, metav1.Condition{
+		Type:               ConditionCompleted,
+		Reason:             conditionReason,
+		ObservedGeneration: observedGeneration,
+		Status:             metav1.ConditionTrue,
+	})
+	setStatusCondition(conditions, metav1.Condition{
+		Type:               ConditionDegraded,
+		Reason:             Healthy,
+		ObservedGeneration: observedGeneration,
+		Status:             metav1.ConditionFalse,
+	})
+	setStatusCondition(conditions, metav1.Condition{
+		Type:               ConditionResyncing,
+		Reason:             NotResyncing,
+		ObservedGeneration: observedGeneration,
+		Status:             metav1.ConditionFalse,
 	})
 }
 
