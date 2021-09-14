@@ -32,6 +32,7 @@ BUNDLE_IMG ?= controller-bundle:$(VERSION)
 IMG_NAME ?= quay.io/csiaddons/volumereplication-operator
 IMG_TAG ?= latest
 IMG=${IMG_NAME}:${IMG_TAG}
+image_arch_list=linux/amd64,linux/ppc64le,linux/s390x
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
 
@@ -99,6 +100,14 @@ docker-build: test
 # Push the docker image
 docker-push:
 	docker push ${IMG}
+
+# Build the docker image
+dockerx-build-multi-arch: test
+	docker buildx build --tag ${IMG} --platform ${image_arch_list} .
+
+# Push the docker image
+dockerx-build-and-push-multi-arch: test
+	docker buildx build --tag ${IMG} --platform ${image_arch_list} --push .
 
 # Download controller-gen locally if necessary
 CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
