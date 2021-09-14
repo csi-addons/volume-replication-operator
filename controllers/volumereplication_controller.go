@@ -216,12 +216,7 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		if instance.Status.State != replicationv1alpha1.SecondaryState {
 			replicationErr = r.markVolumeAsSecondary(instance, logger, volumeHandle, parameters, secret)
 			if replicationErr == nil {
-				err := r.updateReplicationStatus(instance, logger, getReplicationState(instance), "volume is marked secondary")
-				if err != nil {
-					return ctrl.Result{}, err
-				}
 				logger.Info("volume is not ready to use")
-				setOnlyDegradedCondition(&instance.Status.Conditions, instance.Generation)
 				err = r.updateReplicationStatus(instance, logger, getCurrentReplicationState(instance), "volume is degraded")
 				if err != nil {
 					return ctrl.Result{}, err
@@ -236,11 +231,6 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 			replicationErr = r.markVolumeAsSecondary(instance, logger, volumeHandle, parameters, secret)
 			// resync volume if successfully marked Secondary
 			if replicationErr == nil {
-				err := r.updateReplicationStatus(instance, logger, getReplicationState(instance), "volume is marked secondary")
-				if err != nil {
-					return ctrl.Result{}, err
-				}
-
 				requeueForResync, replicationErr = r.resyncVolume(instance, logger, volumeHandle, parameters, secret)
 			}
 		}
@@ -264,7 +254,7 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 	if requeueForResync {
 		logger.Info("volume is not ready to use, requeuing for resync")
-		setDegradedCondition(&instance.Status.Conditions, instance.Generation)
+
 		_ = r.updateReplicationStatus(instance, logger, getCurrentReplicationState(instance), "volume is degraded")
 		return ctrl.Result{Requeue: true}, nil
 	}
@@ -461,11 +451,16 @@ func (r *VolumeReplicationReconciler) resyncVolume(volumeReplicationObject *repl
 		setFailedResyncCondition(&volumeReplicationObject.Status.Conditions, volumeReplicationObject.Generation)
 		return false, err
 	}
+
+	setResyncCondition(&volumeReplicationObject.Status.Conditions, volumeReplicationObject.Generation)
+
 	if !resyncResponse.GetReady() {
 		return true, nil
 	}
 
-	setResyncCondition(&volumeReplicationObject.Status.Conditions, volumeReplicationObject.Generation)
+	// No longer degraded, as volume is fully synced
+	setNotDegradedCondition(&volumeReplicationObject.Status.Conditions, volumeReplicationObject.Generation)
+
 	return false, nil
 }
 
