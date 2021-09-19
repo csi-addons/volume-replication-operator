@@ -67,7 +67,7 @@ type VolumeReplicationSpec struct {
 
 	// replicationHandle represents an existing (but new) replication id
 	// +kubebuilder:validation:Optional
-	replicationHandle string `json:"replicationHandle"`
+	ReplicationHandle string `json:"replicationHandle"`
 }
 
 // VolumeReplicationStatus defines the observed state of VolumeReplication

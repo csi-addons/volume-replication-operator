@@ -16,3 +16,5 @@ require (
 	k8s.io/client-go v0.22.1
 	sigs.k8s.io/controller-runtime v0.9.6
 )
+
+replace github.com/csi-addons/spec => github.com/oriyarde/spec v0.1.1-0.20210919134406-35c5f35c5e90
