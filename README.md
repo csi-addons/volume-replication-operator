@@ -55,6 +55,8 @@ VolumeReplicationClass corresponding to the driver providing replication.
   + `kind` is the kind of resource being replicated. For eg. `PersistentVolumeClaim`
   + `name` is the name of the resource
 
+`replicationHandle` (optional) is an existing (but new) replication id
+
 ```yaml
 apiVersion: replication.storage.openshift.io/v1alpha1
 kind: VolumeReplication
@@ -64,6 +66,7 @@ metadata:
 spec:
   volumeReplicationClass: volumereplicationclass-sample
   replicationState: primary
+  replicationHandle: replicationHandle # optional
   dataSource:
     kind: PersistentVolumeClaim
     name: myPersistentVolumeClaim # should be in same namespace as VolumeReplication
