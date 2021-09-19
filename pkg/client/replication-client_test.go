@@ -37,7 +37,7 @@ func TestEnableVolumeReplication(t *testing.T) {
 		},
 	}
 	client = mockedEnableReplication
-	resp, err := client.EnableVolumeReplication("", nil, nil)
+	resp, err := client.EnableVolumeReplication("", "", nil, nil)
 	assert.Equal(t, &replicationlib.EnableVolumeReplicationResponse{}, resp)
 	assert.Nil(t, err)
 
@@ -48,7 +48,7 @@ func TestEnableVolumeReplication(t *testing.T) {
 		},
 	}
 	client = mockedEnableReplication
-	resp, err = client.EnableVolumeReplication("", nil, nil)
+	resp, err = client.EnableVolumeReplication("", "", nil, nil)
 	assert.Nil(t, resp)
 	assert.NotNil(t, err)
 }
@@ -62,7 +62,7 @@ func TestDisableVolumeReplication(t *testing.T) {
 		},
 	}
 	client = mockedDisableReplication
-	resp, err := client.DisableVolumeReplication("", nil, nil)
+	resp, err := client.DisableVolumeReplication("", "", nil, nil)
 	assert.Equal(t, &replicationlib.DisableVolumeReplicationResponse{}, resp)
 	assert.Nil(t, err)
 
@@ -73,7 +73,7 @@ func TestDisableVolumeReplication(t *testing.T) {
 		},
 	}
 	client = mockedDisableReplication
-	resp, err = client.DisableVolumeReplication("", nil, nil)
+	resp, err = client.DisableVolumeReplication("", "", nil, nil)
 	assert.Nil(t, resp)
 	assert.NotNil(t, err)
 }
@@ -88,7 +88,7 @@ func TestPromoteVolume(t *testing.T) {
 	}
 	force := false
 	client = mockedPromoteVolume
-	resp, err := client.PromoteVolume("", force, nil, nil)
+	resp, err := client.PromoteVolume("", "", force, nil, nil)
 	assert.Equal(t, &replicationlib.PromoteVolumeResponse{}, resp)
 	assert.Nil(t, err)
 
@@ -99,7 +99,7 @@ func TestPromoteVolume(t *testing.T) {
 		},
 	}
 	client = mockedPromoteVolume
-	resp, err = client.PromoteVolume("", force, nil, nil)
+	resp, err = client.PromoteVolume("", "", force, nil, nil)
 	assert.Nil(t, resp)
 	assert.NotNil(t, err)
 }
@@ -113,7 +113,7 @@ func TestDemoteVolume(t *testing.T) {
 		},
 	}
 	client = mockedDemoteVolume
-	resp, err := client.DemoteVolume("", nil, nil)
+	resp, err := client.DemoteVolume("", "", nil, nil)
 	assert.Equal(t, &replicationlib.DemoteVolumeResponse{}, resp)
 	assert.Nil(t, err)
 
@@ -124,7 +124,7 @@ func TestDemoteVolume(t *testing.T) {
 		},
 	}
 	client = mockedDemoteVolume
-	resp, err = client.DemoteVolume("", nil, nil)
+	resp, err = client.DemoteVolume("", "", nil, nil)
 	assert.Nil(t, resp)
 	assert.NotNil(t, err)
 }
@@ -138,7 +138,7 @@ func TestResyncVolume(t *testing.T) {
 		},
 	}
 	client = mockedResyncVolume
-	resp, err := client.ResyncVolume("", nil, nil)
+	resp, err := client.ResyncVolume("", "", nil, nil)
 	assert.Equal(t, &replicationlib.ResyncVolumeResponse{}, resp)
 	assert.Nil(t, err)
 
@@ -149,7 +149,7 @@ func TestResyncVolume(t *testing.T) {
 		},
 	}
 	client = mockedResyncVolume
-	resp, err = client.ResyncVolume("", nil, nil)
+	resp, err = client.ResyncVolume("", "", nil, nil)
 	assert.Nil(t, resp)
 	assert.NotNil(t, err)
 }
