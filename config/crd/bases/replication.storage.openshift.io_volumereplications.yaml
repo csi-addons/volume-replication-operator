@@ -83,6 +83,9 @@ spec:
                 - secondary
                 - resync
                 type: string
+              replicationHandle:
+                description: replicationHandle represents an existing (but new) replication id
+                type: string
               volumeReplicationClass:
                 description: VolumeReplicationClass is the VolumeReplicationClass
                   name for this VolumeReplication resource
