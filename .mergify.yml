@@ -46,6 +46,7 @@ pull_request_rules:
       - label=ready-to-merge
       - base~=^(main)|(release-.+)$
       - "#approved-reviews-by>=1"
+      - "#changes-requested-reviews-by=0"
       - "status-success=codespell"
       - "status-success=test and build (1.16)"
       - "status-success=lint"
