@@ -32,23 +32,23 @@ func TestEnableVolumeReplication(t *testing.T) {
 	var client = NewReplicationClient(&grpc.ClientConn{}, time.Minute)
 	// return success response
 	mockedEnableReplication := &fake.ReplicationClient{
-		EnableVolumeReplicationMock: func(volumeID string, secrets, parameters map[string]string) (*replicationlib.EnableVolumeReplicationResponse, error) {
+		EnableVolumeReplicationMock: func(volumeID, replicationID string, secrets, parameters map[string]string) (*replicationlib.EnableVolumeReplicationResponse, error) {
 			return &replicationlib.EnableVolumeReplicationResponse{}, nil
 		},
 	}
 	client = mockedEnableReplication
-	resp, err := client.EnableVolumeReplication("", nil, nil)
+	resp, err := client.EnableVolumeReplication("", "", nil, nil)
 	assert.Equal(t, &replicationlib.EnableVolumeReplicationResponse{}, resp)
 	assert.Nil(t, err)
 
 	// return error
 	mockedEnableReplication = &fake.ReplicationClient{
-		EnableVolumeReplicationMock: func(volumeID string, secrets, parameters map[string]string) (*replicationlib.EnableVolumeReplicationResponse, error) {
+		EnableVolumeReplicationMock: func(volumeID, replicationID string, secrets, parameters map[string]string) (*replicationlib.EnableVolumeReplicationResponse, error) {
 			return nil, errors.New("failed to enable mirroring")
 		},
 	}
 	client = mockedEnableReplication
-	resp, err = client.EnableVolumeReplication("", nil, nil)
+	resp, err = client.EnableVolumeReplication("", "", nil, nil)
 	assert.Nil(t, resp)
 	assert.NotNil(t, err)
 }
@@ -57,23 +57,23 @@ func TestDisableVolumeReplication(t *testing.T) {
 	var client = NewReplicationClient(&grpc.ClientConn{}, time.Minute)
 	// return success response
 	mockedDisableReplication := &fake.ReplicationClient{
-		DisableVolumeReplicationMock: func(volumeID string, secrets, parameters map[string]string) (*replicationlib.DisableVolumeReplicationResponse, error) {
+		DisableVolumeReplicationMock: func(volumeID, replicationID string, secrets, parameters map[string]string) (*replicationlib.DisableVolumeReplicationResponse, error) {
 			return &replicationlib.DisableVolumeReplicationResponse{}, nil
 		},
 	}
 	client = mockedDisableReplication
-	resp, err := client.DisableVolumeReplication("", nil, nil)
+	resp, err := client.DisableVolumeReplication("", "", nil, nil)
 	assert.Equal(t, &replicationlib.DisableVolumeReplicationResponse{}, resp)
 	assert.Nil(t, err)
 
 	// return error
 	mockedDisableReplication = &fake.ReplicationClient{
-		DisableVolumeReplicationMock: func(volumeID string, secrets, parameters map[string]string) (*replicationlib.DisableVolumeReplicationResponse, error) {
+		DisableVolumeReplicationMock: func(volumeID, replicationID string, secrets, parameters map[string]string) (*replicationlib.DisableVolumeReplicationResponse, error) {
 			return nil, errors.New("failed to disable mirroring")
 		},
 	}
 	client = mockedDisableReplication
-	resp, err = client.DisableVolumeReplication("", nil, nil)
+	resp, err = client.DisableVolumeReplication("", "", nil, nil)
 	assert.Nil(t, resp)
 	assert.NotNil(t, err)
 }
@@ -82,24 +82,24 @@ func TestPromoteVolume(t *testing.T) {
 	var client = NewReplicationClient(&grpc.ClientConn{}, time.Minute)
 	// return success response
 	mockedPromoteVolume := &fake.ReplicationClient{
-		PromoteVolumeMock: func(volumeID string, force bool, secrets, parameters map[string]string) (*replicationlib.PromoteVolumeResponse, error) {
+		PromoteVolumeMock: func(volumeID, replicationID string, force bool, secrets, parameters map[string]string) (*replicationlib.PromoteVolumeResponse, error) {
 			return &replicationlib.PromoteVolumeResponse{}, nil
 		},
 	}
 	force := false
 	client = mockedPromoteVolume
-	resp, err := client.PromoteVolume("", force, nil, nil)
+	resp, err := client.PromoteVolume("", "", force, nil, nil)
 	assert.Equal(t, &replicationlib.PromoteVolumeResponse{}, resp)
 	assert.Nil(t, err)
 
 	// return error
 	mockedPromoteVolume = &fake.ReplicationClient{
-		PromoteVolumeMock: func(volumeID string, force bool, secrets, parameters map[string]string) (*replicationlib.PromoteVolumeResponse, error) {
+		PromoteVolumeMock: func(volumeID, replicationID string, force bool, secrets, parameters map[string]string) (*replicationlib.PromoteVolumeResponse, error) {
 			return nil, errors.New("failed to promote volume")
 		},
 	}
 	client = mockedPromoteVolume
-	resp, err = client.PromoteVolume("", force, nil, nil)
+	resp, err = client.PromoteVolume("", "", force, nil, nil)
 	assert.Nil(t, resp)
 	assert.NotNil(t, err)
 }
@@ -108,23 +108,23 @@ func TestDemoteVolume(t *testing.T) {
 	var client = NewReplicationClient(&grpc.ClientConn{}, time.Minute)
 	// return success response
 	mockedDemoteVolume := &fake.ReplicationClient{
-		DemoteVolumeMock: func(volumeID string, secrets, parameters map[string]string) (*replicationlib.DemoteVolumeResponse, error) {
+		DemoteVolumeMock: func(volumeID, replicationID string, secrets, parameters map[string]string) (*replicationlib.DemoteVolumeResponse, error) {
 			return &replicationlib.DemoteVolumeResponse{}, nil
 		},
 	}
 	client = mockedDemoteVolume
-	resp, err := client.DemoteVolume("", nil, nil)
+	resp, err := client.DemoteVolume("", "", nil, nil)
 	assert.Equal(t, &replicationlib.DemoteVolumeResponse{}, resp)
 	assert.Nil(t, err)
 
 	// return error
 	mockedDemoteVolume = &fake.ReplicationClient{
-		DemoteVolumeMock: func(volumeID string, secrets, parameters map[string]string) (*replicationlib.DemoteVolumeResponse, error) {
+		DemoteVolumeMock: func(volumeID, replicationID string, secrets, parameters map[string]string) (*replicationlib.DemoteVolumeResponse, error) {
 			return nil, errors.New("failed to demote volume")
 		},
 	}
 	client = mockedDemoteVolume
-	resp, err = client.DemoteVolume("", nil, nil)
+	resp, err = client.DemoteVolume("", "", nil, nil)
 	assert.Nil(t, resp)
 	assert.NotNil(t, err)
 }
@@ -133,23 +133,23 @@ func TestResyncVolume(t *testing.T) {
 	var client = NewReplicationClient(&grpc.ClientConn{}, time.Minute)
 	// return success response
 	mockedResyncVolume := &fake.ReplicationClient{
-		ResyncVolumeMock: func(volumeID string, secrets, parameters map[string]string) (*replicationlib.ResyncVolumeResponse, error) {
+		ResyncVolumeMock: func(volumeID, replicationID string, secrets, parameters map[string]string) (*replicationlib.ResyncVolumeResponse, error) {
 			return &replicationlib.ResyncVolumeResponse{}, nil
 		},
 	}
 	client = mockedResyncVolume
-	resp, err := client.ResyncVolume("", nil, nil)
+	resp, err := client.ResyncVolume("", "", nil, nil)
 	assert.Equal(t, &replicationlib.ResyncVolumeResponse{}, resp)
 	assert.Nil(t, err)
 
 	// return error
 	mockedResyncVolume = &fake.ReplicationClient{
-		ResyncVolumeMock: func(volumeID string, secrets, parameters map[string]string) (*replicationlib.ResyncVolumeResponse, error) {
+		ResyncVolumeMock: func(volumeID, replicationID string, secrets, parameters map[string]string) (*replicationlib.ResyncVolumeResponse, error) {
 			return nil, errors.New("failed to resync volume")
 		},
 	}
 	client = mockedResyncVolume
-	resp, err = client.ResyncVolume("", nil, nil)
+	resp, err = client.ResyncVolume("", "", nil, nil)
 	assert.Nil(t, resp)
 	assert.NotNil(t, err)
 }
