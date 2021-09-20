@@ -37,15 +37,17 @@ type ReplicationResponse struct {
 
 // CommonRequestParameters holds the common parameters across replication operations.
 type CommonRequestParameters struct {
-	VolumeID    string
-	Parameters  map[string]string
-	Secrets     map[string]string
-	Replication client.VolumeReplication
+	VolumeID      string
+	ReplicationID string
+	Parameters    map[string]string
+	Secrets       map[string]string
+	Replication   client.VolumeReplication
 }
 
 func (r *Replication) Enable() *ReplicationResponse {
 	resp, err := r.Params.Replication.EnableVolumeReplication(
 		r.Params.VolumeID,
+		r.Params.ReplicationID,
 		r.Params.Secrets,
 		r.Params.Parameters,
 	)
@@ -56,6 +58,7 @@ func (r *Replication) Enable() *ReplicationResponse {
 func (r *Replication) Disable() *ReplicationResponse {
 	resp, err := r.Params.Replication.DisableVolumeReplication(
 		r.Params.VolumeID,
+		r.Params.ReplicationID,
 		r.Params.Secrets,
 		r.Params.Parameters,
 	)
@@ -66,6 +69,7 @@ func (r *Replication) Disable() *ReplicationResponse {
 func (r *Replication) Promote() *ReplicationResponse {
 	resp, err := r.Params.Replication.PromoteVolume(
 		r.Params.VolumeID,
+		r.Params.ReplicationID,
 		r.Force,
 		r.Params.Secrets,
 		r.Params.Parameters,
@@ -77,6 +81,7 @@ func (r *Replication) Promote() *ReplicationResponse {
 func (r *Replication) Demote() *ReplicationResponse {
 	resp, err := r.Params.Replication.DemoteVolume(
 		r.Params.VolumeID,
+		r.Params.ReplicationID,
 		r.Params.Secrets,
 		r.Params.Parameters,
 	)
@@ -87,6 +92,7 @@ func (r *Replication) Demote() *ReplicationResponse {
 func (r *Replication) Resync() *ReplicationResponse {
 	resp, err := r.Params.Replication.ResyncVolume(
 		r.Params.VolumeID,
+		r.Params.ReplicationID,
 		r.Params.Secrets,
 		r.Params.Parameters,
 	)
