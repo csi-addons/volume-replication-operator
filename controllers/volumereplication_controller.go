@@ -364,11 +364,11 @@ func (r *VolumeReplicationReconciler) waitForVolumeReplicationResource(logger lo
 
 // markVolumeAsPrimary defines and runs a set of tasks required to mark a volume as primary
 func (r *VolumeReplicationReconciler) markVolumeAsPrimary(volumeReplicationObject *replicationv1alpha1.VolumeReplication,
-	logger logr.Logger, volumeID string, replicationId string, parameters, secrets map[string]string) error {
+	logger logr.Logger, volumeID, replicationID string, parameters, secrets map[string]string) error {
 
 	c := replication.CommonRequestParameters{
 		VolumeID:      volumeID,
-		ReplicationID: replicationId,
+		ReplicationID: replicationID,
 		Parameters:    parameters,
 		Secrets:       secrets,
 		Replication:   r.Replication,
@@ -407,11 +407,11 @@ func (r *VolumeReplicationReconciler) markVolumeAsPrimary(volumeReplicationObjec
 
 // markVolumeAsSecondary defines and runs a set of tasks required to mark a volume as secondary
 func (r *VolumeReplicationReconciler) markVolumeAsSecondary(volumeReplicationObject *replicationv1alpha1.VolumeReplication,
-	logger logr.Logger, volumeID string, replicationId string, parameters, secrets map[string]string) error {
+	logger logr.Logger, volumeID, replicationID string, parameters, secrets map[string]string) error {
 
 	c := replication.CommonRequestParameters{
 		VolumeID:      volumeID,
-		ReplicationID: replicationId,
+		ReplicationID: replicationID,
 		Parameters:    parameters,
 		Secrets:       secrets,
 		Replication:   r.Replication,
@@ -435,11 +435,11 @@ func (r *VolumeReplicationReconciler) markVolumeAsSecondary(volumeReplicationObj
 
 // resyncVolume defines and runs a set of tasks required to resync the volume
 func (r *VolumeReplicationReconciler) resyncVolume(volumeReplicationObject *replicationv1alpha1.VolumeReplication,
-	logger logr.Logger, volumeID string, replicationId string, parameters, secrets map[string]string) (bool, error) {
+	logger logr.Logger, volumeID, replicationID string, parameters, secrets map[string]string) (bool, error) {
 
 	c := replication.CommonRequestParameters{
 		VolumeID:      volumeID,
-		ReplicationID: replicationId,
+		ReplicationID: replicationID,
 		Parameters:    parameters,
 		Secrets:       secrets,
 		Replication:   r.Replication,
@@ -477,12 +477,12 @@ func (r *VolumeReplicationReconciler) resyncVolume(volumeReplicationObject *repl
 }
 
 // disableVolumeReplication defines and runs a set of tasks required to disable volume replication
-func (r *VolumeReplicationReconciler) disableVolumeReplication(logger logr.Logger, volumeID string, replicationId string,
+func (r *VolumeReplicationReconciler) disableVolumeReplication(logger logr.Logger, volumeID, replicationID string,
 	parameters, secrets map[string]string) error {
 
 	c := replication.CommonRequestParameters{
 		VolumeID:      volumeID,
-		ReplicationID: replicationId,
+		ReplicationID: replicationID,
 		Parameters:    parameters,
 		Secrets:       secrets,
 		Replication:   r.Replication,
@@ -507,12 +507,12 @@ func (r *VolumeReplicationReconciler) disableVolumeReplication(logger logr.Logge
 }
 
 // enableReplication enable volume replication on the first reconcile
-func (r *VolumeReplicationReconciler) enableReplication(logger logr.Logger, volumeID string, replicationId string,
+func (r *VolumeReplicationReconciler) enableReplication(logger logr.Logger, volumeID, replicationID string,
 	parameters, secrets map[string]string) error {
 
 	c := replication.CommonRequestParameters{
 		VolumeID:      volumeID,
-		ReplicationID: replicationId,
+		ReplicationID: replicationID,
 		Parameters:    parameters,
 		Secrets:       secrets,
 		Replication:   r.Replication,
