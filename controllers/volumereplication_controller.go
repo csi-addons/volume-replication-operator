@@ -217,7 +217,9 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 			replicationErr = r.markVolumeAsSecondary(instance, logger, volumeHandle, parameters, secret)
 			if replicationErr == nil {
 				logger.Info("volume is not ready to use")
-				err = r.updateReplicationStatus(instance, logger, getCurrentReplicationState(instance), "volume is degraded")
+				// set the status.State to secondary as the
+				// instance.Status.State is primary for the first time.
+				err = r.updateReplicationStatus(instance, logger, getReplicationState(instance), "volume is marked secondary and is degraded")
 				if err != nil {
 					return ctrl.Result{}, err
 				}
