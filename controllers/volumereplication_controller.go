@@ -256,6 +256,13 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	if replicationErr != nil {
 		logger.Error(replicationErr, "failed to Replicate", "ReplicationState", instance.Spec.ReplicationState)
 		_ = r.updateReplicationStatus(instance, logger, getCurrentReplicationState(instance), replicationErr.Error())
+		if instance.Status.State == replicationv1alpha1.SecondaryState {
+			return ctrl.Result{
+				Requeue: true,
+				// in case of any error during secondary state, requeue for every 15 seconds.
+				RequeueAfter: time.Duration(time.Second * 15),
+			}, nil
+		}
 		return ctrl.Result{}, replicationErr
 	}
 
