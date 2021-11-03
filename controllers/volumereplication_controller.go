@@ -92,7 +92,7 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	}
 
 	// Get VolumeReplicationClass
-	vrcObj, err := r.getVolumeReplicaClass(logger, instance.Spec.VolumeReplicationClass)
+	vrcObj, err := r.getVolumeReplicationClass(logger, instance.Spec.VolumeReplicationClass)
 	if err != nil {
 		setFailureCondition(instance)
 		_ = r.updateReplicationStatus(instance, logger, getCurrentReplicationState(instance), err.Error())
