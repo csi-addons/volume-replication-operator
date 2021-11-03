@@ -54,7 +54,7 @@ var (
 	disableReplicationKnownErrors = []codes.Code{codes.NotFound}
 )
 
-// VolumeReplicationReconciler reconciles a VolumeReplication object
+// VolumeReplicationReconciler reconciles a VolumeReplication object.
 type VolumeReplicationReconciler struct {
 	client.Client
 	Log          logr.Logger
@@ -85,6 +85,7 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
 			logger.Info("volumeReplication resource not found")
+
 			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
@@ -96,10 +97,12 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	if err != nil {
 		setFailureCondition(instance)
 		_ = r.updateReplicationStatus(instance, logger, getCurrentReplicationState(instance), err.Error())
+
 		return ctrl.Result{}, err
 	}
 
 	if r.DriverConfig.DriverName != vrcObj.Spec.Provisioner {
+
 		return ctrl.Result{}, nil
 	}
 
@@ -108,6 +111,7 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		setFailureCondition(instance)
 		_ = r.updateReplicationStatus(instance, logger, getCurrentReplicationState(instance), err.Error())
 		logger.Error(err, "failed to validate parameters of volumeReplicationClass", "VRCName", instance.Spec.VolumeReplicationClass)
+
 		return ctrl.Result{}, err
 	}
 	// remove the prefix keys in volume replication class parameters
@@ -143,6 +147,7 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 			setFailureCondition(instance)
 			_ = r.updateReplicationStatus(instance, logger, getCurrentReplicationState(instance), pvErr.Error())
 			logger.Error(pvErr, "failed to get PVC", "PVCName", instance.Spec.DataSource.Name)
+
 			return ctrl.Result{}, pvErr
 		}
 

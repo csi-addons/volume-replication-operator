@@ -35,6 +35,7 @@ func (r VolumeReplicationReconciler) getVolumeReplicationClass(logger logr.Logge
 		} else {
 			logger.Error(err, "Got an unexpected error while fetching VolumeReplicationClass", "VolumeReplicationClass", vrcName)
 		}
+
 		return nil, err
 	}
 

@@ -46,7 +46,6 @@ func TestGetVolumeReplicaClass(t *testing.T) {
 	}
 
 	for _, tc := range testcases {
-
 		var objects []runtime.Object
 
 		volumeReplication := &replicationv1alpha1.VolumeReplication{}
