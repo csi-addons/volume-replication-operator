@@ -231,7 +231,7 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 				return ctrl.Result{
 					Requeue: true,
 					// Setting Requeue time for 15 seconds
-					RequeueAfter: time.Duration(time.Second * 15),
+					RequeueAfter: time.Second * 15,
 				}, nil
 			}
 		} else {
@@ -260,7 +260,7 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 			return ctrl.Result{
 				Requeue: true,
 				// in case of any error during secondary state, requeue for every 15 seconds.
-				RequeueAfter: time.Duration(time.Second * 15),
+				RequeueAfter: time.Second * 15,
 			}, nil
 		}
 		return ctrl.Result{}, replicationErr
@@ -275,7 +275,7 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 			// Setting Requeue time for 30 seconds as the resync can take time
 			// and having default Requeue exponential backoff time can affect
 			// the RTO time.
-			RequeueAfter: time.Duration(time.Second * 30),
+			RequeueAfter: time.Second * 30,
 		}, nil
 	}
 
