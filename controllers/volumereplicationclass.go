@@ -25,7 +25,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func (r VolumeReplicationReconciler) getVolumeReplicaClass(logger logr.Logger, vrcName string) (*replicationv1alpha1.VolumeReplicationClass, error) {
+// getVolumeReplicationClass get volume replication class object from the subjected namespace and return the same.
+func (r VolumeReplicationReconciler) getVolumeReplicationClass(logger logr.Logger, vrcName string) (*replicationv1alpha1.VolumeReplicationClass, error) {
 	vrcObj := &replicationv1alpha1.VolumeReplicationClass{}
 	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: vrcName}, vrcObj)
 	if err != nil {
