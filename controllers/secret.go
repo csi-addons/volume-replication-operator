@@ -25,7 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-// getSecret retrieves the secrets based on name and namespace input
+// getSecret retrieves the secrets based on name and namespace input.
 func (r *VolumeReplicationReconciler) getSecret(logger logr.Logger, name, namespace string) (map[string]string, error) {
 	namespacedName := types.NamespacedName{Name: name, Namespace: namespace}
 	secret := &corev1.Secret{}
@@ -33,15 +33,18 @@ func (r *VolumeReplicationReconciler) getSecret(logger logr.Logger, name, namesp
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Error(err, "secret not found", "Secret Name", name, "Secret Namespace", namespace)
+
 			return nil, err
 		}
 		logger.Error(err, "error getting secret", "Secret Name", name, "Secret Namespace", namespace)
+
 		return nil, err
 	}
+
 	return convertMap(secret.Data), nil
 }
 
-// convertMap converts map[string][]byte to map[string]string
+// convertMap converts map[string][]byte to map[string]string.
 func convertMap(oldMap map[string][]byte) map[string]string {
 	newMap := make(map[string]string)
 

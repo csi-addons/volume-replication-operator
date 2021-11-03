@@ -42,6 +42,7 @@ func filterPrefixedParameters(prefix string, param map[string]string) map[string
 			newParam[k] = v
 		}
 	}
+
 	return newParam
 }
 
@@ -61,6 +62,7 @@ func validatePrefixedParameters(param map[string]string) error {
 				}
 			// keep adding known prefixes to this list.
 			default:
+
 				return fmt.Errorf("found unknown parameter key %q with reserved prefix %s", k, replicationParameterPrefix)
 			}
 		}

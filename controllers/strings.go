@@ -23,6 +23,7 @@ func contains(slice []string, s string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -34,5 +35,6 @@ func remove(slice []string, s string) (result []string) {
 		}
 		result = append(result, item)
 	}
+
 	return
 }

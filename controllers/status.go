@@ -42,7 +42,7 @@ const (
 	NotResyncing    = "NotResyncing"
 )
 
-// sets conditions when volume was promoted successfully
+// sets conditions when volume was promoted successfully.
 func setPromotedCondition(conditions *[]metav1.Condition, observedGeneration int64) {
 	setStatusCondition(conditions, metav1.Condition{
 		Type:               ConditionCompleted,
@@ -64,7 +64,7 @@ func setPromotedCondition(conditions *[]metav1.Condition, observedGeneration int
 	})
 }
 
-// sets conditions when volume promotion was failed
+// sets conditions when volume promotion was failed.
 func setFailedPromotionCondition(conditions *[]metav1.Condition, observedGeneration int64) {
 	setStatusCondition(conditions, metav1.Condition{
 		Type:               ConditionCompleted,
@@ -86,7 +86,7 @@ func setFailedPromotionCondition(conditions *[]metav1.Condition, observedGenerat
 	})
 }
 
-// sets conditions when volume is demoted and ready to use (resync completed)
+// sets conditions when volume is demoted and ready to use (resync completed).
 func setNotDegradedCondition(conditions *[]metav1.Condition, observedGeneration int64) {
 	setStatusCondition(conditions, metav1.Condition{
 		Type:               ConditionDegraded,
@@ -102,7 +102,7 @@ func setNotDegradedCondition(conditions *[]metav1.Condition, observedGeneration 
 	})
 }
 
-// sets conditions when volume was demoted successfully
+// sets conditions when volume was demoted successfully.
 func setDemotedCondition(conditions *[]metav1.Condition, observedGeneration int64) {
 	setStatusCondition(conditions, metav1.Condition{
 		Type:               ConditionCompleted,
@@ -125,7 +125,7 @@ func setDemotedCondition(conditions *[]metav1.Condition, observedGeneration int6
 
 }
 
-// sets conditions when volume demotion was failed
+// sets conditions when volume demotion was failed.
 func setFailedDemotionCondition(conditions *[]metav1.Condition, observedGeneration int64) {
 	setStatusCondition(conditions, metav1.Condition{
 		Type:               ConditionCompleted,
@@ -148,7 +148,7 @@ func setFailedDemotionCondition(conditions *[]metav1.Condition, observedGenerati
 
 }
 
-// sets conditions when volume resync was triggered successfully
+// sets conditions when volume resync was triggered successfully.
 func setResyncCondition(conditions *[]metav1.Condition, observedGeneration int64) {
 	setStatusCondition(conditions, metav1.Condition{
 		Type:               ConditionCompleted,
@@ -170,7 +170,7 @@ func setResyncCondition(conditions *[]metav1.Condition, observedGeneration int64
 	})
 }
 
-// sets conditions when volume resync failed
+// sets conditions when volume resync failed.
 func setFailedResyncCondition(conditions *[]metav1.Condition, observedGeneration int64) {
 	setStatusCondition(conditions, metav1.Condition{
 		Type:               ConditionCompleted,
