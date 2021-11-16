@@ -237,11 +237,8 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 				}, nil
 			}
 		} else {
-			replicationErr = r.markVolumeAsSecondary(instance, logger, volumeHandle, replicationHandle, parameters, secret)
-			// resync volume if successfully marked Secondary
-			if replicationErr == nil {
-				requeueForResync, replicationErr = r.resyncVolume(instance, logger, volumeHandle, replicationHandle, parameters, secret)
-			}
+			// resync volume as the volume is already marked Secondary
+			requeueForResync, replicationErr = r.resyncVolume(instance, logger, volumeHandle, replicationHandle, parameters, secret)
 		}
 
 	case replicationv1alpha1.Resync:
