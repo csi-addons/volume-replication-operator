@@ -199,19 +199,21 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return reconcile.Result{}, err
 	}
 
-	// enable replication on every reconcile
-	if err = r.enableReplication(logger, volumeHandle, replicationHandle, parameters, secret); err != nil {
-		logger.Error(err, "failed to enable replication")
-		setFailureCondition(instance)
-		_ = r.updateReplicationStatus(instance, logger, getCurrentReplicationState(instance), err.Error())
-		return reconcile.Result{}, err
-	}
-
 	var replicationErr error
 	var requeueForResync bool
 
 	switch instance.Spec.ReplicationState {
 	case replicationv1alpha1.Primary:
+		// Send EnableVolumeReplication request only if the request is new or a
+		// failed requeue request.
+		if instance.Status.State == "" || instance.Status.State == replicationv1alpha1.UnknownState {
+			if err = r.enableReplication(logger, volumeHandle, replicationHandle, parameters, secret); err != nil {
+				logger.Error(err, "failed to enable replication")
+				setFailureCondition(instance)
+				_ = r.updateReplicationStatus(instance, logger, getCurrentReplicationState(instance), err.Error())
+				return reconcile.Result{}, err
+			}
+		}
 		replicationErr = r.markVolumeAsPrimary(instance, logger, volumeHandle, replicationHandle, parameters, secret)
 
 	case replicationv1alpha1.Secondary:
