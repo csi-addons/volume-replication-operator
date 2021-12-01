@@ -120,3 +120,15 @@ func (r *ReplicationResponse) HasKnownGRPCError(knownErrors []codes.Code) bool {
 
 	return false
 }
+
+// GetMessageFromError returns the message from the error.
+func GetMessageFromError(err error) string {
+	s, ok := status.FromError(err)
+	if !ok {
+		// This is not gRPC error. The operation must have failed before gRPC
+		// method was called, otherwise we would get gRPC error.
+		return err.Error()
+	}
+
+	return s.Message()
+}

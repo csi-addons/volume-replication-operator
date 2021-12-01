@@ -208,7 +208,8 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	if err = r.enableReplication(logger, volumeHandle, replicationHandle, parameters, secret); err != nil {
 		logger.Error(err, "failed to enable replication")
 		setFailureCondition(instance)
-		_ = r.updateReplicationStatus(instance, logger, getCurrentReplicationState(instance), err.Error())
+		msg := replication.GetMessageFromError(err)
+		_ = r.updateReplicationStatus(instance, logger, getCurrentReplicationState(instance), msg)
 		return reconcile.Result{}, err
 	}
 
@@ -259,8 +260,9 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	}
 
 	if replicationErr != nil {
+		msg := replication.GetMessageFromError(replicationErr)
 		logger.Error(replicationErr, "failed to Replicate", "ReplicationState", instance.Spec.ReplicationState)
-		_ = r.updateReplicationStatus(instance, logger, getCurrentReplicationState(instance), replicationErr.Error())
+		_ = r.updateReplicationStatus(instance, logger, getCurrentReplicationState(instance), msg)
 		if instance.Status.State == replicationv1alpha1.SecondaryState {
 			return ctrl.Result{
 				Requeue: true,
