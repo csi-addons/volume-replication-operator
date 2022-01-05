@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	replicationv1alpha1 "github.com/csi-addons/volume-replication-operator/api/v1alpha1"
+
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -36,6 +37,7 @@ var mockVolumeReplicationClassObj = &replicationv1alpha1.VolumeReplicationClass{
 }
 
 func TestGetVolumeReplicaClass(t *testing.T) {
+	t.Parallel()
 	testcases := []struct {
 		createVrc       bool
 		errorExpected   bool

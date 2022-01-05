@@ -18,14 +18,16 @@ package client
 
 import (
 	"errors"
-	replicationlib "github.com/csi-addons/spec/lib/go/replication"
-	"github.com/csi-addons/volume-replication-operator/pkg/client/fake"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/csi-addons/volume-replication-operator/pkg/client/fake"
+
+	replicationlib "github.com/csi-addons/spec/lib/go/replication"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestEnableVolumeReplication(t *testing.T) {
-
+	t.Parallel()
 	mockedEnableReplication := &fake.ReplicationClient{
 		EnableVolumeReplicationMock: func(volumeID, replicationID string, secrets, parameters map[string]string) (*replicationlib.EnableVolumeReplicationResponse, error) {
 			return &replicationlib.EnableVolumeReplicationResponse{}, nil
@@ -49,6 +51,7 @@ func TestEnableVolumeReplication(t *testing.T) {
 }
 
 func TestDisableVolumeReplication(t *testing.T) {
+	t.Parallel()
 	mockedDisableReplication := &fake.ReplicationClient{
 		DisableVolumeReplicationMock: func(volumeID, replicationID string, secrets, parameters map[string]string) (*replicationlib.DisableVolumeReplicationResponse, error) {
 			return &replicationlib.DisableVolumeReplicationResponse{}, nil
@@ -72,6 +75,7 @@ func TestDisableVolumeReplication(t *testing.T) {
 }
 
 func TestPromoteVolume(t *testing.T) {
+	t.Parallel()
 	// return success response
 	mockedPromoteVolume := &fake.ReplicationClient{
 		PromoteVolumeMock: func(volumeID, replicationID string, force bool, secrets, parameters map[string]string) (*replicationlib.PromoteVolumeResponse, error) {
@@ -97,6 +101,7 @@ func TestPromoteVolume(t *testing.T) {
 }
 
 func TestDemoteVolume(t *testing.T) {
+	t.Parallel()
 	// return success response
 	mockedDemoteVolume := &fake.ReplicationClient{
 		DemoteVolumeMock: func(volumeID, replicationID string, secrets, parameters map[string]string) (*replicationlib.DemoteVolumeResponse, error) {
@@ -121,6 +126,7 @@ func TestDemoteVolume(t *testing.T) {
 }
 
 func TestResyncVolume(t *testing.T) {
+	t.Parallel()
 	// return success response
 	mockedResyncVolume := &fake.ReplicationClient{
 		ResyncVolumeMock: func(volumeID, replicationID string, secrets, parameters map[string]string) (*replicationlib.ResyncVolumeResponse, error) {

@@ -67,5 +67,6 @@ func validatePrefixedParameters(param map[string]string) error {
 			}
 		}
 	}
+
 	return nil
 }

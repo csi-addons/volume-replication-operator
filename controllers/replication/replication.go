@@ -23,14 +23,14 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// Replication represents the instance of a single replication operation
+// Replication represents the instance of a single replication operation.
 type Replication struct {
 	Params CommonRequestParameters
 	Force  bool
 }
 
-// ReplicationResponse is the response of a replication operation
-type ReplicationResponse struct {
+// Response is the response of a replication operation.
+type Response struct {
 	Response interface{}
 	Error    error
 }
@@ -44,7 +44,7 @@ type CommonRequestParameters struct {
 	Replication   client.VolumeReplication
 }
 
-func (r *Replication) Enable() *ReplicationResponse {
+func (r *Replication) Enable() *Response {
 	resp, err := r.Params.Replication.EnableVolumeReplication(
 		r.Params.VolumeID,
 		r.Params.ReplicationID,
@@ -52,10 +52,10 @@ func (r *Replication) Enable() *ReplicationResponse {
 		r.Params.Parameters,
 	)
 
-	return &ReplicationResponse{Response: resp, Error: err}
+	return &Response{Response: resp, Error: err}
 }
 
-func (r *Replication) Disable() *ReplicationResponse {
+func (r *Replication) Disable() *Response {
 	resp, err := r.Params.Replication.DisableVolumeReplication(
 		r.Params.VolumeID,
 		r.Params.ReplicationID,
@@ -63,10 +63,10 @@ func (r *Replication) Disable() *ReplicationResponse {
 		r.Params.Parameters,
 	)
 
-	return &ReplicationResponse{Response: resp, Error: err}
+	return &Response{Response: resp, Error: err}
 }
 
-func (r *Replication) Promote() *ReplicationResponse {
+func (r *Replication) Promote() *Response {
 	resp, err := r.Params.Replication.PromoteVolume(
 		r.Params.VolumeID,
 		r.Params.ReplicationID,
@@ -75,10 +75,10 @@ func (r *Replication) Promote() *ReplicationResponse {
 		r.Params.Parameters,
 	)
 
-	return &ReplicationResponse{Response: resp, Error: err}
+	return &Response{Response: resp, Error: err}
 }
 
-func (r *Replication) Demote() *ReplicationResponse {
+func (r *Replication) Demote() *Response {
 	resp, err := r.Params.Replication.DemoteVolume(
 		r.Params.VolumeID,
 		r.Params.ReplicationID,
@@ -86,10 +86,10 @@ func (r *Replication) Demote() *ReplicationResponse {
 		r.Params.Parameters,
 	)
 
-	return &ReplicationResponse{Response: resp, Error: err}
+	return &Response{Response: resp, Error: err}
 }
 
-func (r *Replication) Resync() *ReplicationResponse {
+func (r *Replication) Resync() *Response {
 	resp, err := r.Params.Replication.ResyncVolume(
 		r.Params.VolumeID,
 		r.Params.ReplicationID,
@@ -97,10 +97,10 @@ func (r *Replication) Resync() *ReplicationResponse {
 		r.Params.Parameters,
 	)
 
-	return &ReplicationResponse{Response: resp, Error: err}
+	return &Response{Response: resp, Error: err}
 }
 
-func (r *ReplicationResponse) HasKnownGRPCError(knownErrors []codes.Code) bool {
+func (r *Response) HasKnownGRPCError(knownErrors []codes.Code) bool {
 	if r.Error == nil {
 		return false
 	}
