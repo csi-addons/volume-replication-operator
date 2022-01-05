@@ -43,7 +43,7 @@ import (
 )
 
 const (
-	// defaultTimeout is default timeout for RPC call
+	// defaultTimeout is default timeout for RPC call.
 	defaultTimeout = time.Minute
 )
 

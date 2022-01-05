@@ -25,6 +25,7 @@ import (
 )
 
 func TestGetMessageFromError(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name string
 		err  error
@@ -47,9 +48,11 @@ func TestGetMessageFromError(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := GetMessageFromError(tt.err); got != tt.want {
-				t.Errorf("GetMessageFromError() = %v, want %v", got, tt.want)
+		newtt := tt
+		t.Run(newtt.name, func(t *testing.T) {
+			t.Parallel()
+			if got := GetMessageFromError(newtt.err); got != newtt.want {
+				t.Errorf("GetMessageFromError() = %v, want %v", got, newtt.want)
 			}
 		})
 	}

@@ -34,6 +34,7 @@ func (r VolumeReplicationReconciler) getPVCDataSource(logger logr.Logger, req ty
 		if errors.IsNotFound(err) {
 			logger.Error(err, "PVC not found", "PVC Name", req.Name)
 		}
+
 		return nil, nil, err
 	}
 	// Validate PVC in bound state

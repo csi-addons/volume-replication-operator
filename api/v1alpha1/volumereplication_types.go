@@ -21,36 +21,36 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// ReplicationState represents the replication operations to be performed on the volume
+// ReplicationState represents the replication operations to be performed on the volume.
 // +kubebuilder:validation:Enum=primary;secondary;resync
 type ReplicationState string
 
 const (
-	// Primary ReplicationState enables mirroring and promotes the volume to primary
+	// Primary ReplicationState enables mirroring and promotes the volume to primary.
 	Primary ReplicationState = "primary"
 
-	// Secondary ReplicationState demotes the volume to secondary and resyncs the volume if out of sync
+	// Secondary ReplicationState demotes the volume to secondary and resyncs the volume if out of sync.
 	Secondary ReplicationState = "secondary"
 
-	// Resync option resyncs the volume
+	// Resync option resyncs the volume.
 	Resync ReplicationState = "resync"
 )
 
-// State captures the latest state of the replication operation
+// State captures the latest state of the replication operation.
 type State string
 
 const (
-	// PrimaryState represents the Primary replication state
+	// PrimaryState represents the Primary replication state.
 	PrimaryState State = "Primary"
 
-	// SecondaryState represents the Secondary replication state
+	// SecondaryState represents the Secondary replication state.
 	SecondaryState State = "Secondary"
 
-	// UnknownState represents the Unknown replication state
+	// UnknownState represents the Unknown replication state.
 	UnknownState State = "Unknown"
 )
 
-// VolumeReplicationSpec defines the desired state of VolumeReplication
+// VolumeReplicationSpec defines the desired state of VolumeReplication.
 type VolumeReplicationSpec struct {
 	// VolumeReplicationClass is the VolumeReplicationClass name for this VolumeReplication resource
 	// +kubebuilder:validation:Required
@@ -70,7 +70,7 @@ type VolumeReplicationSpec struct {
 	ReplicationHandle string `json:"replicationHandle"`
 }
 
-// VolumeReplicationStatus defines the observed state of VolumeReplication
+// VolumeReplicationStatus defines the observed state of VolumeReplication.
 type VolumeReplicationStatus struct {
 	State   State  `json:"state,omitempty"`
 	Message string `json:"message,omitempty"`
@@ -92,7 +92,7 @@ type VolumeReplicationStatus struct {
 // +kubebuilder:printcolumn:JSONPath=".status.state",name=currentState,type=string
 // +kubebuilder:resource:shortName=vr
 
-// VolumeReplication is the Schema for the volumereplications API
+// VolumeReplication is the Schema for the volumereplications API.
 type VolumeReplication struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -103,7 +103,7 @@ type VolumeReplication struct {
 
 // +kubebuilder:object:root=true
 
-// VolumeReplicationList contains a list of VolumeReplication
+// VolumeReplicationList contains a list of VolumeReplication.
 type VolumeReplicationList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

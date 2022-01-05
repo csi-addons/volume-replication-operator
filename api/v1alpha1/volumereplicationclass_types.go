@@ -33,16 +33,15 @@ type VolumeReplicationClassSpec struct {
 	Parameters map[string]string `json:"parameters,omitempty"`
 }
 
-// VolumeReplicationClassStatus defines the observed state of VolumeReplicationClass
-type VolumeReplicationClassStatus struct {
-}
+// VolumeReplicationClassStatus defines the observed state of VolumeReplicationClass.
+type VolumeReplicationClassStatus struct{}
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Cluster,shortName=vrc
 // +kubebuilder:printcolumn:JSONPath=".spec.provisioner",name=provisioner,type=string
 
-// VolumeReplicationClass is the Schema for the volumereplicationclasses API
+// VolumeReplicationClass is the Schema for the volumereplicationclasses API.
 type VolumeReplicationClass struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -53,7 +52,7 @@ type VolumeReplicationClass struct {
 
 // +kubebuilder:object:root=true
 
-// VolumeReplicationClassList contains a list of VolumeReplicationClass
+// VolumeReplicationClassList contains a list of VolumeReplicationClass.
 type VolumeReplicationClassList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

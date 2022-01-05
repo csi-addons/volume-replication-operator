@@ -42,5 +42,6 @@ func (cfg *DriverConfig) Validate() error {
 	if cfg.DriverName == "" {
 		return errors.New("driverName is empty")
 	}
+
 	return nil
 }

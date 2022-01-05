@@ -35,26 +35,57 @@ type ReplicationClient struct {
 }
 
 // EnableVolumeReplication calls EnableVolumeReplicationMock mock function.
-func (rc *ReplicationClient) EnableVolumeReplication(volumeID, replicationID string, secrets, parameters map[string]string) (*replicationlib.EnableVolumeReplicationResponse, error) {
+func (rc *ReplicationClient) EnableVolumeReplication(
+	volumeID,
+	replicationID string,
+	secrets,
+	parameters map[string]string) (
+	*replicationlib.EnableVolumeReplicationResponse,
+	error) {
 	return rc.EnableVolumeReplicationMock(volumeID, replicationID, secrets, parameters)
 }
 
 // DisableVolumeReplication calls DisableVolumeReplicationMock mock function.
-func (rc *ReplicationClient) DisableVolumeReplication(volumeID, replicationID string, secrets, parameters map[string]string) (*replicationlib.DisableVolumeReplicationResponse, error) {
+func (rc *ReplicationClient) DisableVolumeReplication(
+	volumeID,
+	replicationID string,
+	secrets,
+	parameters map[string]string) (
+	*replicationlib.DisableVolumeReplicationResponse,
+	error) {
 	return rc.DisableVolumeReplicationMock(volumeID, replicationID, secrets, parameters)
 }
 
 // PromoteVolume calls PromoteVolumeMock mock function.
-func (rc *ReplicationClient) PromoteVolume(volumeID, replicationID string, force bool, secrets, parameters map[string]string) (*replicationlib.PromoteVolumeResponse, error) {
+func (rc *ReplicationClient) PromoteVolume(
+	volumeID,
+	replicationID string,
+	force bool,
+	secrets,
+	parameters map[string]string) (
+	*replicationlib.PromoteVolumeResponse,
+	error) {
 	return rc.PromoteVolumeMock(volumeID, replicationID, force, secrets, parameters)
 }
 
 // DemoteVolume calls DemoteVolumeMock mock function.
-func (rc *ReplicationClient) DemoteVolume(volumeID, replicationID string, secrets, parameters map[string]string) (*replicationlib.DemoteVolumeResponse, error) {
+func (rc *ReplicationClient) DemoteVolume(
+	volumeID,
+	replicationID string,
+	secrets,
+	parameters map[string]string) (
+	*replicationlib.DemoteVolumeResponse,
+	error) {
 	return rc.DemoteVolumeMock(volumeID, replicationID, secrets, parameters)
 }
 
 // ResyncVolume calls ResyncVolumeMock function.
-func (rc *ReplicationClient) ResyncVolume(volumeID, replicationID string, secrets, parameters map[string]string) (*replicationlib.ResyncVolumeResponse, error) {
+func (rc *ReplicationClient) ResyncVolume(
+	volumeID,
+	replicationID string,
+	secrets,
+	parameters map[string]string) (
+	*replicationlib.ResyncVolumeResponse,
+	error) {
 	return rc.ResyncVolumeMock(volumeID, replicationID, secrets, parameters)
 }

@@ -21,14 +21,14 @@ import (
 
 	replicationv1alpha1 "github.com/csi-addons/volume-replication-operator/api/v1alpha1"
 	"github.com/csi-addons/volume-replication-operator/pkg/config"
+
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -78,6 +78,7 @@ var mockPersistentVolumeClaim = &corev1.PersistentVolumeClaim{
 }
 
 func createFakeScheme(t *testing.T) *runtime.Scheme {
+	t.Helper()
 	scheme, err := replicationv1alpha1.SchemeBuilder.Build()
 	if err != nil {
 		assert.Fail(t, "unable to build scheme")
@@ -90,10 +91,12 @@ func createFakeScheme(t *testing.T) *runtime.Scheme {
 	if err != nil {
 		assert.Fail(t, "failed to add replicationv1alpha1 scheme")
 	}
+
 	return scheme
 }
 
 func createFakeVolumeReplicationReconciler(t *testing.T, obj ...runtime.Object) VolumeReplicationReconciler {
+	t.Helper()
 	scheme := createFakeScheme(t)
 	client := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(obj...).Build()
 
@@ -106,6 +109,7 @@ func createFakeVolumeReplicationReconciler(t *testing.T, obj ...runtime.Object) 
 }
 
 func TestGetVolumeHandle(t *testing.T) {
+	t.Parallel()
 	testcases := []struct {
 		name                 string
 		pv                   *corev1.PersistentVolume
@@ -156,8 +160,10 @@ func TestGetVolumeHandle(t *testing.T) {
 		testPVC := &corev1.PersistentVolumeClaim{}
 		tc.pvc.DeepCopyInto(testPVC)
 
-		namespacedName := types.NamespacedName{Name: mockPVCName,
-			Namespace: volumeReplication.Namespace}
+		namespacedName := types.NamespacedName{
+			Name:      mockPVCName,
+			Namespace: volumeReplication.Namespace,
+		}
 
 		reconciler := createFakeVolumeReplicationReconciler(t, testPV, testPVC, volumeReplication)
 		resultPVC, resultPV, err := reconciler.getPVCDataSource(reconciler.Log, namespacedName)
