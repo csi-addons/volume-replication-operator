@@ -16,7 +16,7 @@ jobs:
       - name: codespell
         uses: codespell-project/actions-codespell@master
         with:
-          skip: .git
+          skip: .git,vendor,go.sum
           check_filenames: true
           # Add list of words to be ignored
           ignore_words_list: ExtraVersion,extraversion,ba
