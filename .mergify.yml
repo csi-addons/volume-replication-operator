@@ -11,7 +11,7 @@ queue_rules:
   - name: default
     conditions:
       - "status-success=codespell"
-      - "status-success=test and build (1.16)"
+      - "status-success=test and build (1.17)"
       - "status-success=lint"
       - "status-success=DCO"
 
@@ -39,7 +39,7 @@ pull_request_rules:
       - "#approved-reviews-by>=2"
       - "#changes-requested-reviews-by=0"
       - "status-success=codespell"
-      - "status-success=test and build (1.16)"
+      - "status-success=test and build (1.17)"
       - "status-success=lint"
       - "status-success=DCO"
     actions:
@@ -54,7 +54,7 @@ pull_request_rules:
       - "#approved-reviews-by>=1"
       - "#changes-requested-reviews-by=0"
       - "status-success=codespell"
-      - "status-success=test and build (1.16)"
+      - "status-success=test and build (1.17)"
       - "status-success=lint"
       - "status-success=DCO"
     actions:
