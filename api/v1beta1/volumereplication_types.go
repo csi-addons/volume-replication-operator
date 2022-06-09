@@ -1,5 +1,5 @@
 /*
-Copyright 2021.
+Copyright 2022.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v1beta1
 
 import (
 	corev1 "k8s.io/api/core/v1"
@@ -91,7 +91,6 @@ type VolumeReplicationStatus struct {
 // +kubebuilder:printcolumn:JSONPath=".spec.replicationState",name=desiredState,type=string
 // +kubebuilder:printcolumn:JSONPath=".status.state",name=currentState,type=string
 // +kubebuilder:resource:shortName=vr
-// +kubebuilder:storageversion
 
 // VolumeReplication is the Schema for the volumereplications API.
 type VolumeReplication struct {
