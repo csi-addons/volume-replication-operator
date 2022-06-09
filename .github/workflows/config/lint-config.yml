@@ -123,6 +123,7 @@ linters-settings:
       - wrapperFunc
       - unnamedResult
       - dupImport # https://github.com/go-critic/go-critic/issues/845
+      - hugeParam
   unused:
     # treat code as a program (not a library) and report unused exported
     # identifiers; default is false.

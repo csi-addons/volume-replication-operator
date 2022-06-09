@@ -91,6 +91,7 @@ type VolumeReplicationStatus struct {
 // +kubebuilder:printcolumn:JSONPath=".spec.replicationState",name=desiredState,type=string
 // +kubebuilder:printcolumn:JSONPath=".status.state",name=currentState,type=string
 // +kubebuilder:resource:shortName=vr
+// +kubebuilder:storageversion
 
 // VolumeReplication is the Schema for the volumereplications API.
 type VolumeReplication struct {
