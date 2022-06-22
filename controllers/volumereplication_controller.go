@@ -272,12 +272,12 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 			replicationErr = r.markVolumeAsSecondary(instance, logger, volumeHandle, replicationHandle, parameters, secret)
 			// resync volume if successfully marked Secondary
 			if replicationErr == nil {
-				requeueForResync, replicationErr = r.resyncVolume(instance, logger, volumeHandle, replicationHandle, parameters, secret)
+				requeueForResync, replicationErr = r.resyncVolume(instance, logger, volumeHandle, replicationHandle, instance.Spec.AutoResync, parameters, secret)
 			}
 		}
 
 	case replicationv1alpha1.Resync:
-		requeueForResync, replicationErr = r.resyncVolume(instance, logger, volumeHandle, replicationHandle, parameters, secret)
+		requeueForResync, replicationErr = r.resyncVolume(instance, logger, volumeHandle, replicationHandle, true, parameters, secret)
 
 	default:
 		replicationErr = fmt.Errorf("unsupported volume state")
@@ -512,7 +512,7 @@ func (r *VolumeReplicationReconciler) markVolumeAsSecondary(volumeReplicationObj
 
 // resyncVolume defines and runs a set of tasks required to resync the volume.
 func (r *VolumeReplicationReconciler) resyncVolume(volumeReplicationObject *replicationv1alpha1.VolumeReplication,
-	logger logr.Logger, volumeID, replicationID string, parameters, secrets map[string]string) (bool, error) {
+	logger logr.Logger, volumeID, replicationID string, force bool, parameters, secrets map[string]string) (bool, error) {
 	c := replication.CommonRequestParameters{
 		VolumeID:      volumeID,
 		ReplicationID: replicationID,
@@ -523,6 +523,7 @@ func (r *VolumeReplicationReconciler) resyncVolume(volumeReplicationObject *repl
 
 	volumeReplication := replication.Replication{
 		Params: c,
+		Force:  force,
 	}
 
 	resp := volumeReplication.Resync()

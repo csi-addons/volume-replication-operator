@@ -65,6 +65,10 @@ type VolumeReplicationSpec struct {
 	// +kubebuilder:validation:Required
 	DataSource corev1.TypedLocalObjectReference `json:"dataSource"`
 
+	// AutoResync represents the volume to be auto resynced when
+	// ReplicationState is "secondary"
+	AutoResync bool `json:"autoResync"`
+
 	// replicationHandle represents an existing (but new) replication id
 	// +kubebuilder:validation:Optional
 	ReplicationHandle string `json:"replicationHandle"`

@@ -37,7 +37,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: VolumeReplication is the Schema for the volumereplications API
+        description: VolumeReplication is the Schema for the volumereplications API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -52,8 +52,12 @@ spec:
           metadata:
             type: object
           spec:
-            description: VolumeReplicationSpec defines the desired state of VolumeReplication
+            description: VolumeReplicationSpec defines the desired state of VolumeReplication.
             properties:
+              autoResync:
+                description: AutoResync represents the volume to be auto resynced
+                  when ReplicationState is "secondary"
+                type: boolean
               dataSource:
                 description: DataSource represents the object associated with the
                   volume
@@ -74,6 +78,10 @@ spec:
                 - kind
                 - name
                 type: object
+              replicationHandle:
+                description: replicationHandle represents an existing (but new) replication
+                  id
+                type: string
               replicationState:
                 description: ReplicationState represents the replication operation
                   to be performed on the volume. Supported operations are "primary",
@@ -83,20 +91,18 @@ spec:
                 - secondary
                 - resync
                 type: string
-              replicationHandle:
-                description: replicationHandle represents an existing (but new) replication id
-                type: string
               volumeReplicationClass:
                 description: VolumeReplicationClass is the VolumeReplicationClass
                   name for this VolumeReplication resource
                 type: string
             required:
+            - autoResync
             - dataSource
             - replicationState
             - volumeReplicationClass
             type: object
           status:
-            description: VolumeReplicationStatus defines the observed state of VolumeReplication
+            description: VolumeReplicationStatus defines the observed state of VolumeReplication.
             properties:
               conditions:
                 description: Conditions are the list of conditions and their status.
@@ -182,7 +188,7 @@ spec:
                 format: int64
                 type: integer
               state:
-                description: State captures the latest state of the replication operation
+                description: State captures the latest state of the replication operation.
                 type: string
             type: object
         type: object
