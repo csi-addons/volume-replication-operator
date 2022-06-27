@@ -42,7 +42,7 @@ type VolumeReplication interface {
 	DemoteVolume(volumeID, replicationID string, secrets, parameters map[string]string) (*replicationlib.
 		DemoteVolumeResponse, error)
 	// ResyncVolume RPC call to resync the volume.
-	ResyncVolume(volumeID, replicationID string, secrets, parameters map[string]string) (*replicationlib.
+	ResyncVolume(volumeID, replicationID string, force bool, secrets, parameters map[string]string) (*replicationlib.
 		ResyncVolumeResponse, error)
 }
 
@@ -121,12 +121,13 @@ func (rc *replicationClient) DemoteVolume(volumeID, replicationID string,
 }
 
 // ResyncVolume RPC call to resync the volume.
-func (rc *replicationClient) ResyncVolume(volumeID, replicationID string,
+func (rc *replicationClient) ResyncVolume(volumeID, replicationID string, force bool,
 	secrets, parameters map[string]string) (*replicationlib.ResyncVolumeResponse, error) {
 	req := &replicationlib.ResyncVolumeRequest{
 		VolumeId:      volumeID,
 		ReplicationId: replicationID,
 		Parameters:    parameters,
+		Force:         force,
 		Secrets:       secrets,
 	}
 

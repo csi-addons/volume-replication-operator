@@ -93,6 +93,7 @@ func (r *Replication) Resync() *Response {
 	resp, err := r.Params.Replication.ResyncVolume(
 		r.Params.VolumeID,
 		r.Params.ReplicationID,
+		r.Force,
 		r.Params.Secrets,
 		r.Params.Parameters,
 	)
