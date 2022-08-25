@@ -17,6 +17,7 @@ limitations under the License.
 package controllers
 
 import (
+	"context"
 	"testing"
 
 	replicationv1alpha1 "github.com/csi-addons/volume-replication-operator/api/v1alpha1"
@@ -28,7 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -103,7 +104,7 @@ func createFakeVolumeReplicationReconciler(t *testing.T, obj ...runtime.Object) 
 	return VolumeReplicationReconciler{
 		Client:       client,
 		Scheme:       scheme,
-		Log:          logf.Log.WithName("controller_volumereplication_test"),
+		Log:          log.Log.WithName("controller_volumereplication_test"),
 		DriverConfig: &config.DriverConfig{DriverName: "test-driver"},
 	}
 }
@@ -176,4 +177,95 @@ func TestGetVolumeHandle(t *testing.T) {
 			assert.Equal(t, tc.expectedVolumeHandle, resultPV.Spec.CSI.VolumeHandle)
 		}
 	}
+}
+
+func TestVolumeReplicationReconciler_annotatePVCWithOwner(t *testing.T) {
+	t.Parallel()
+	vrName := "test-vr"
+
+	testcases := []struct {
+		name          string
+		pvc           *corev1.PersistentVolumeClaim
+		errorExpected bool
+	}{
+		{
+			name:          "case 1: no VR is owning the PVC",
+			pvc:           mockPersistentVolumeClaim,
+			errorExpected: false,
+		},
+		{
+			name: "case 2: pvc is already owned by same VR",
+			pvc: &corev1.PersistentVolumeClaim{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "pvc-name",
+					Namespace: mockNamespace,
+					Annotations: map[string]string{
+						replicationv1alpha1.VolumeReplicationNameAnnotation: vrName,
+					},
+				},
+			},
+			errorExpected: false,
+		},
+		{
+			name: "case 2: pvc is owned by different VR",
+			pvc: &corev1.PersistentVolumeClaim{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "pvc-name",
+					Namespace: mockNamespace,
+					Annotations: map[string]string{
+						replicationv1alpha1.VolumeReplicationNameAnnotation: "test-vr-1",
+					},
+				},
+			},
+			errorExpected: true,
+		},
+	}
+
+	for _, tc := range testcases {
+		volumeReplication := &replicationv1alpha1.VolumeReplication{}
+		mockVolumeReplicationObj.DeepCopyInto(volumeReplication)
+
+		testPVC := &corev1.PersistentVolumeClaim{}
+		tc.pvc.DeepCopyInto(testPVC)
+
+		ctx := context.TODO()
+
+		reconciler := createFakeVolumeReplicationReconciler(t, testPVC, volumeReplication)
+		err := reconciler.annotatePVCWithOwner(ctx, log.FromContext(context.TODO()), vrName, testPVC)
+		if tc.errorExpected {
+			assert.Error(t, err)
+		} else {
+			assert.NoError(t, err)
+
+			pvcNamespacedName := types.NamespacedName{
+				Name:      testPVC.Name,
+				Namespace: testPVC.Namespace,
+			}
+
+			// check annotation is added
+			err = reconciler.Get(ctx, pvcNamespacedName, testPVC)
+			assert.NoError(t, err)
+
+			assert.Equal(t, testPVC.ObjectMeta.Annotations[replicationv1alpha1.VolumeReplicationNameAnnotation], vrName)
+		}
+
+		err = reconciler.removeOwnerFromPVCAnnotation(context.TODO(), log.FromContext(context.TODO()), testPVC)
+		assert.NoError(t, err)
+
+		// try calling delete again, it should not fail
+		err = reconciler.removeOwnerFromPVCAnnotation(context.TODO(), log.FromContext(context.TODO()), testPVC)
+		assert.NoError(t, err)
+	}
+
+	// try removeOwnerFromPVCAnnotation for empty map
+	pvc := &corev1.PersistentVolumeClaim{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "pvc-name",
+			Namespace: mockNamespace,
+		},
+	}
+	volumeReplication := &replicationv1alpha1.VolumeReplication{}
+	reconciler := createFakeVolumeReplicationReconciler(t, pvc, volumeReplication)
+	err := reconciler.removeOwnerFromPVCAnnotation(context.TODO(), log.FromContext(context.TODO()), pvc)
+	assert.NoError(t, err)
 }

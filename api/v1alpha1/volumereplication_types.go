@@ -36,6 +36,10 @@ const (
 	Resync ReplicationState = "resync"
 )
 
+const (
+	VolumeReplicationNameAnnotation = "replication.storage.openshift.io/volume-replication-name"
+)
+
 // State captures the latest state of the replication operation.
 type State string
 
