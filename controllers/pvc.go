@@ -24,6 +24,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+
+	replicationv1alpha1 "github.com/csi-addons/volume-replication-operator/api/v1alpha1"
 )
 
 // getPVCDataSource get pvc, pv object from the request.
@@ -55,4 +57,53 @@ func (r VolumeReplicationReconciler) getPVCDataSource(logger logr.Logger, req ty
 	}
 
 	return pvc, pv, nil
+}
+
+// annotatePVCWithOwner will add the VolumeReplication details to the PVC annotations.
+func (r *VolumeReplicationReconciler) annotatePVCWithOwner(ctx context.Context, logger logr.Logger, reqOwnerName string, pvc *corev1.PersistentVolumeClaim) error {
+	if pvc.ObjectMeta.Annotations == nil {
+		pvc.ObjectMeta.Annotations = map[string]string{}
+	}
+
+	currentOwnerName := pvc.ObjectMeta.Annotations[replicationv1alpha1.VolumeReplicationNameAnnotation]
+	if currentOwnerName == "" {
+		logger.Info("setting owner on PVC annotation", "Name", pvc.Name, "owner", reqOwnerName)
+		pvc.ObjectMeta.Annotations[replicationv1alpha1.VolumeReplicationNameAnnotation] = reqOwnerName
+		err := r.Update(ctx, pvc)
+		if err != nil {
+			logger.Error(err, "Failed to update PVC annotation", "Name", pvc.Name)
+
+			return fmt.Errorf("failed to update PVC %q annotation for VolumeReplication: %w",
+				pvc.Name, err)
+		}
+
+		return nil
+	}
+
+	if currentOwnerName != reqOwnerName {
+		logger.Info("cannot change the owner of PVC",
+			"PVC name", pvc.Name,
+			"current owner", currentOwnerName,
+			"requested owner", reqOwnerName)
+
+		return fmt.Errorf("PVC %q not owned by VolumeReplication %q",
+			pvc.Name, reqOwnerName)
+	}
+
+	return nil
+}
+
+// removeOwnerFromPVCAnnotation removes the VolumeReplication owner from the PVC annotations.
+func (r *VolumeReplicationReconciler) removeOwnerFromPVCAnnotation(ctx context.Context, logger logr.Logger, pvc *corev1.PersistentVolumeClaim) error {
+	if _, ok := pvc.ObjectMeta.Annotations[replicationv1alpha1.VolumeReplicationNameAnnotation]; ok {
+		logger.Info("removing annotation from PersistentVolumeClaim object", "Annotation", replicationv1alpha1.VolumeReplicationNameAnnotation)
+		delete(pvc.ObjectMeta.Annotations, replicationv1alpha1.VolumeReplicationNameAnnotation)
+		if err := r.Client.Update(ctx, pvc); err != nil {
+			return fmt.Errorf("failed to remove annotation %q from PersistentVolumeClaim "+
+				"%q %w",
+				replicationv1alpha1.VolumeReplicationNameAnnotation, pvc.Name, err)
+		}
+	}
+
+	return nil
 }
