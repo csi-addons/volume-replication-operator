@@ -188,10 +188,12 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 			return reconcile.Result{}, err
 		}
-		if err = r.addFinalizerToPVC(logger, pvc); err != nil {
-			logger.Error(err, "Failed to add PersistentVolumeClaim finalizer")
+		if pvc.GetDeletionTimestamp().IsZero() {
+			if err = r.addFinalizerToPVC(logger, pvc); err != nil {
+				logger.Error(err, "Failed to add PersistentVolumeClaim finalizer")
 
-			return reconcile.Result{}, err
+				return reconcile.Result{}, err
+			}
 		}
 	} else {
 		if contains(instance.GetFinalizers(), volumeReplicationFinalizer) {
